@@ -12,6 +12,7 @@ from .project_types import (
     NextJSProject,
     FlaskProject,
     DjangoProject,
+    iOSProject,
     GenericProject,
     detect_project_type,
 )
@@ -41,6 +42,26 @@ from .fix_strategies import (
     PermissionFixer,
     ConfigurationFixer,
     SyntaxFixer,
+    # iOS-specific fixers
+    SwiftSyntaxFixer,
+    SimulatorFixer,
+    SwiftPackageFixer,
+    SigningFixer,
+)
+from .ios_simulator import (
+    iOSSimulatorManager,
+    iOSProjectBuilder,
+    Simulator,
+    SimulatorState,
+    SimulatorResult,
+    AppInstallResult,
+    BuildResult,
+    # Convenience functions
+    list_simulators,
+    boot_simulator,
+    get_booted_simulator,
+    build_ios_project,
+    run_ios_tests,
 )
 
 __all__ = [
@@ -81,6 +102,11 @@ __all__ = [
     "PermissionFixer",
     "ConfigurationFixer",
     "SyntaxFixer",
+    # iOS-specific fixers
+    "SwiftSyntaxFixer",
+    "SimulatorFixer",
+    "SwiftPackageFixer",
+    "SigningFixer",
     # Project handlers
     "BaseProjectHandler",
     "NodeJSProject",
@@ -89,7 +115,21 @@ __all__ = [
     "NextJSProject",
     "FlaskProject",
     "DjangoProject",
+    "iOSProject",
     "GenericProject",
+    # iOS Simulator utilities
+    "iOSSimulatorManager",
+    "iOSProjectBuilder",
+    "Simulator",
+    "SimulatorState",
+    "SimulatorResult",
+    "AppInstallResult",
+    "BuildResult",
+    "list_simulators",
+    "boot_simulator",
+    "get_booted_simulator",
+    "build_ios_project",
+    "run_ios_tests",
     # Utility functions
     "detect_project_type",
 ]

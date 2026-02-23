@@ -60,6 +60,19 @@ from ai_orchestrator.execution import (
     CycleResult,
     ProgressTrend,
     detect_project_type,
+    # iOS-specific imports
+    iOSProject,
+    iOSSimulatorManager,
+    iOSProjectBuilder,
+    Simulator,
+    SimulatorResult,
+    BuildResult,
+    list_simulators,
+    boot_simulator,
+    build_ios_project,
+    run_ios_tests,
+    SimulatorFixer,
+    SwiftPackageFixer,
 )
 
 
@@ -589,6 +602,146 @@ async def list_tools() -> list[Tool]:
                 "required": ["project_path", "project_description"]
             }
         ),
+        
+        # iOS-specific tools
+        Tool(
+            name="list_ios_simulators",
+            description="List all available iOS Simulators on the system. Returns device names, UDIDs, states (Booted/Shutdown), and iOS versions. Useful for choosing a target simulator before running iOS apps.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "available_only": {
+                        "type": "boolean",
+                        "description": "Only show available simulators (default: true)",
+                        "default": True
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="boot_ios_simulator",
+            description="Boot an iOS Simulator by device name. Opens the Simulator app and boots the specified device. Useful before running iOS apps.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "device_name": {
+                        "type": "string",
+                        "description": "Device name to boot (e.g., 'iPhone 15', 'iPad Pro'). Default: 'iPhone 15'",
+                        "default": "iPhone 15"
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="build_ios_project",
+            description="Build an iOS/SwiftUI project for the iOS Simulator using xcodebuild. Automatically detects .xcodeproj/.xcworkspace and builds with code signing disabled for simulator.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {
+                        "type": "string",
+                        "description": "Absolute path to the iOS project directory"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "Xcode scheme to build (auto-detected if not provided)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (default: Debug)",
+                        "default": "Debug"
+                    },
+                    "simulator_device": {
+                        "type": "string",
+                        "description": "Target simulator device name (default: iPhone 15)",
+                        "default": "iPhone 15"
+                    }
+                },
+                "required": ["project_path"]
+            }
+        ),
+        Tool(
+            name="run_ios_app",
+            description="Build and run an iOS app in the Simulator. Builds the project, installs the app on the simulator, and launches it.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {
+                        "type": "string",
+                        "description": "Absolute path to the iOS project directory"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "Xcode scheme to build (auto-detected if not provided)"
+                    },
+                    "simulator_device": {
+                        "type": "string",
+                        "description": "Target simulator device name (default: iPhone 15)",
+                        "default": "iPhone 15"
+                    },
+                    "boot_simulator": {
+                        "type": "boolean",
+                        "description": "Boot simulator if not running (default: true)",
+                        "default": True
+                    }
+                },
+                "required": ["project_path"]
+            }
+        ),
+        Tool(
+            name="test_ios_project",
+            description="Run XCTest tests for an iOS project. Uses xcodebuild test to run unit tests and UI tests in the simulator.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "project_path": {
+                        "type": "string",
+                        "description": "Absolute path to the iOS project directory"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "Xcode scheme to test (auto-detected if not provided)"
+                    },
+                    "simulator_device": {
+                        "type": "string",
+                        "description": "Target simulator device name (default: iPhone 15)",
+                        "default": "iPhone 15"
+                    }
+                },
+                "required": ["project_path"]
+            }
+        ),
+        Tool(
+            name="take_simulator_screenshot",
+            description="Capture a screenshot from the running iOS Simulator. Useful for documenting app states or debugging UI issues.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "output_path": {
+                        "type": "string",
+                        "description": "Path to save the screenshot (default: ./screenshot.png)",
+                        "default": "./screenshot.png"
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="reset_ios_simulator",
+            description="Reset/erase an iOS Simulator to factory state. Removes all installed apps and data. Useful for clean test environments.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "device_name": {
+                        "type": "string",
+                        "description": "Device name to reset. If not provided, resets the booted simulator."
+                    }
+                },
+                "required": []
+            }
+        ),
     ]
 
 
@@ -626,6 +779,22 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             return await handle_verify_project(arguments)
         elif name == "orchestrate_full_development":
             return await handle_orchestrate_full_development(arguments)
+        
+        # iOS-specific tools
+        elif name == "list_ios_simulators":
+            return await handle_list_ios_simulators(arguments)
+        elif name == "boot_ios_simulator":
+            return await handle_boot_ios_simulator(arguments)
+        elif name == "build_ios_project":
+            return await handle_build_ios_project(arguments)
+        elif name == "run_ios_app":
+            return await handle_run_ios_app(arguments)
+        elif name == "test_ios_project":
+            return await handle_test_ios_project(arguments)
+        elif name == "take_simulator_screenshot":
+            return await handle_take_simulator_screenshot(arguments)
+        elif name == "reset_ios_simulator":
+            return await handle_reset_ios_simulator(arguments)
         
         else:
             return [TextContent(
@@ -1294,6 +1463,492 @@ async def handle_orchestrate_full_development(arguments: dict[str, Any]) -> list
                 "error_type": type(e).__name__,
                 "project_path": str(project_path),
                 "traceback": traceback.format_exc()
+            }, indent=2)
+        )]
+
+
+# ============================================================================
+# iOS Tool Handlers
+# ============================================================================
+
+async def handle_list_ios_simulators(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the list_ios_simulators tool call."""
+    available_only = arguments.get("available_only", True)
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=config.ios.ios_simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        
+        simulators = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.list_simulators(available_only=available_only)
+        )
+        
+        response = {
+            "tool": "list_ios_simulators",
+            "total_simulators": len(simulators),
+            "simulators": [
+                {
+                    "name": sim.name,
+                    "udid": sim.udid,
+                    "state": sim.state.value,
+                    "os_version": sim.os_version,
+                    "is_booted": sim.is_booted,
+                }
+                for sim in simulators
+            ]
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(response, indent=2)
+        )]
+    except Exception as e:
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "message": "Failed to list simulators. Is Xcode installed?"
+            }, indent=2)
+        )]
+
+
+async def handle_boot_ios_simulator(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the boot_ios_simulator tool call."""
+    device_name = arguments.get("device_name", "iPhone 15")
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=config.ios.ios_simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        
+        result = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.boot_simulator(device_name=device_name)
+        )
+        
+        response = {
+            "tool": "boot_ios_simulator",
+            "success": result.success,
+            "message": result.message,
+            "device_name": device_name,
+            "simulator": {
+                "name": result.simulator.name,
+                "udid": result.simulator.udid,
+                "state": result.simulator.state.value,
+            } if result.simulator else None,
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(response, indent=2)
+        )]
+    except Exception as e:
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "device_name": device_name,
+            }, indent=2)
+        )]
+
+
+async def handle_build_ios_project(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the build_ios_project tool call."""
+    project_path = arguments.get("project_path")
+    if not project_path:
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": "Missing required parameter: project_path"}, indent=2)
+        )]
+    
+    project_path = Path(project_path)
+    if not project_path.exists():
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": f"Project path does not exist: {project_path}"}, indent=2)
+        )]
+    
+    scheme = arguments.get("scheme")
+    configuration = arguments.get("configuration", "Debug")
+    simulator_device = arguments.get("simulator_device", "iPhone 15")
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        builder = iOSProjectBuilder(
+            simulator_manager=sim_manager,
+            build_timeout=config.ios.xcode_build_timeout,
+        )
+        
+        # Find simulator
+        simulator = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.find_simulator(device_name=simulator_device)
+        )
+        
+        # Build
+        result = await loop.run_in_executor(
+            None,
+            lambda: builder.build_for_simulator(
+                project_path=project_path,
+                scheme=scheme,
+                simulator=simulator,
+                configuration=configuration,
+            )
+        )
+        
+        response = {
+            "tool": "build_ios_project",
+            "success": result.success,
+            "project_path": str(project_path),
+            "message": result.message,
+            "duration_seconds": round(result.duration, 2),
+            "app_path": result.app_path,
+            "build_dir": result.build_dir,
+            "output": truncate_output(result.output, 5000) if result.output else None,
+            "error": truncate_output(result.error, 3000) if result.error else None,
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(response, indent=2)
+        )]
+    except Exception as e:
+        import traceback
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "project_path": str(project_path),
+                "traceback": traceback.format_exc(),
+            }, indent=2)
+        )]
+
+
+async def handle_run_ios_app(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the run_ios_app tool call."""
+    project_path = arguments.get("project_path")
+    if not project_path:
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": "Missing required parameter: project_path"}, indent=2)
+        )]
+    
+    project_path = Path(project_path)
+    if not project_path.exists():
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": f"Project path does not exist: {project_path}"}, indent=2)
+        )]
+    
+    scheme = arguments.get("scheme")
+    simulator_device = arguments.get("simulator_device", "iPhone 15")
+    should_boot_simulator = arguments.get("boot_simulator", True)
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        builder = iOSProjectBuilder(
+            simulator_manager=sim_manager,
+            build_timeout=config.ios.xcode_build_timeout,
+        )
+        
+        # Boot simulator if needed
+        if should_boot_simulator:
+            boot_result = await loop.run_in_executor(
+                None,
+                lambda: sim_manager.boot_simulator(device_name=simulator_device)
+            )
+            if not boot_result.success:
+                return [TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "error": f"Failed to boot simulator: {boot_result.message}",
+                        "tool": "run_ios_app",
+                    }, indent=2)
+                )]
+        
+        # Find simulator
+        simulator = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.find_simulator(device_name=simulator_device)
+        )
+        
+        # Build
+        build_result = await loop.run_in_executor(
+            None,
+            lambda: builder.build_for_simulator(
+                project_path=project_path,
+                scheme=scheme,
+                simulator=simulator,
+            )
+        )
+        
+        if not build_result.success:
+            return [TextContent(
+                type="text",
+                text=json.dumps({
+                    "tool": "run_ios_app",
+                    "success": False,
+                    "phase": "build",
+                    "message": build_result.message,
+                    "error": truncate_output(build_result.error, 3000) if build_result.error else None,
+                }, indent=2)
+            )]
+        
+        # Install and launch
+        if build_result.app_path:
+            install_result = await loop.run_in_executor(
+                None,
+                lambda: sim_manager.install_app(build_result.app_path, simulator)
+            )
+            
+            if install_result.success and install_result.bundle_id:
+                launch_result = await loop.run_in_executor(
+                    None,
+                    lambda: sim_manager.launch_app(install_result.bundle_id, simulator)
+                )
+                
+                return [TextContent(
+                    type="text",
+                    text=json.dumps({
+                        "tool": "run_ios_app",
+                        "success": launch_result.success,
+                        "project_path": str(project_path),
+                        "app_path": build_result.app_path,
+                        "bundle_id": install_result.bundle_id,
+                        "simulator": {
+                            "name": simulator.name if simulator else None,
+                            "udid": simulator.udid if simulator else None,
+                        },
+                        "message": launch_result.message,
+                    }, indent=2)
+                )]
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "tool": "run_ios_app",
+                "success": True,
+                "message": "Build succeeded but could not find app bundle to install",
+                "build_result": build_result.message,
+            }, indent=2)
+        )]
+    except Exception as e:
+        import traceback
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "project_path": str(project_path),
+                "traceback": traceback.format_exc(),
+            }, indent=2)
+        )]
+
+
+async def handle_test_ios_project(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the test_ios_project tool call."""
+    project_path = arguments.get("project_path")
+    if not project_path:
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": "Missing required parameter: project_path"}, indent=2)
+        )]
+    
+    project_path = Path(project_path)
+    if not project_path.exists():
+        return [TextContent(
+            type="text",
+            text=json.dumps({"error": f"Project path does not exist: {project_path}"}, indent=2)
+        )]
+    
+    scheme = arguments.get("scheme")
+    simulator_device = arguments.get("simulator_device", "iPhone 15")
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        builder = iOSProjectBuilder(
+            simulator_manager=sim_manager,
+            build_timeout=config.ios.xcode_test_timeout,
+        )
+        
+        # Find simulator
+        simulator = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.find_simulator(device_name=simulator_device)
+        )
+        
+        # Run tests
+        result = await loop.run_in_executor(
+            None,
+            lambda: builder.run_tests(
+                project_path=project_path,
+                scheme=scheme,
+                simulator=simulator,
+            )
+        )
+        
+        response = {
+            "tool": "test_ios_project",
+            "success": result.success,
+            "project_path": str(project_path),
+            "message": result.message,
+            "duration_seconds": round(result.duration, 2),
+            "output": truncate_output(result.output, 5000) if result.output else None,
+            "error": truncate_output(result.error, 3000) if result.error else None,
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(response, indent=2)
+        )]
+    except Exception as e:
+        import traceback
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "project_path": str(project_path),
+                "traceback": traceback.format_exc(),
+            }, indent=2)
+        )]
+
+
+async def handle_take_simulator_screenshot(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the take_simulator_screenshot tool call."""
+    output_path = arguments.get("output_path", "./screenshot.png")
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=config.ios.ios_simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        
+        result = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.take_screenshot(output_path)
+        )
+        
+        response = {
+            "tool": "take_simulator_screenshot",
+            "success": result.success,
+            "message": result.message,
+            "screenshot_path": result.data.get("screenshot_path") if result.success else None,
+            "simulator": {
+                "name": result.simulator.name,
+                "udid": result.simulator.udid,
+            } if result.simulator else None,
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(response, indent=2)
+        )]
+    except Exception as e:
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
+            }, indent=2)
+        )]
+
+
+async def handle_reset_ios_simulator(arguments: dict[str, Any]) -> list[TextContent]:
+    """Handle the reset_ios_simulator tool call."""
+    device_name = arguments.get("device_name")
+    
+    loop = asyncio.get_event_loop()
+    
+    try:
+        config = get_config()
+        sim_manager = iOSSimulatorManager(
+            default_device=config.ios.ios_simulator_device,
+            default_os=config.ios.ios_simulator_os,
+        )
+        
+        # Find simulator
+        simulator = None
+        if device_name:
+            simulator = await loop.run_in_executor(
+                None,
+                lambda: sim_manager.find_simulator(device_name=device_name)
+            )
+        else:
+            simulator = await loop.run_in_executor(
+                None,
+                sim_manager.get_booted_simulator
+            )
+        
+        if not simulator:
+            return [TextContent(
+                type="text",
+                text=json.dumps({
+                    "tool": "reset_ios_simulator",
+                    "success": False,
+                    "message": "No simulator found to reset",
+                }, indent=2)
+            )]
+        
+        result = await loop.run_in_executor(
+            None,
+            lambda: sim_manager.erase_simulator(simulator)
+        )
+        
+        response = {
+            "tool": "reset_ios_simulator",
+            "success": result.success,
+            "message": result.message,
+            "simulator": {
+                "name": simulator.name,
+                "udid": simulator.udid,
+            },
+        }
+        
+        return [TextContent(
+            type="text",
+            text=json.dumps(response, indent=2)
+        )]
+    except Exception as e:
+        return [TextContent(
+            type="text",
+            text=json.dumps({
+                "error": str(e),
+                "error_type": type(e).__name__,
             }, indent=2)
         )]
 

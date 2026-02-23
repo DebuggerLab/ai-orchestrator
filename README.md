@@ -7,7 +7,8 @@ A powerful Python CLI tool that intelligently orchestrates multiple AI models fo
 - **Multi-Model Integration**: Seamlessly connects to OpenAI, Anthropic, Google Gemini, and Moonshot AI
 - **Intelligent Task Routing**: Automatically determines the best model for each task type
 - **Task Decomposition**: Breaks complex tasks into subtasks and routes each optimally
-- **Project Execution**: Run and test projects with auto-detection (Python, Node.js, React, etc.)
+- **Project Execution**: Run and test projects with auto-detection (Python, Node.js, React, Flask, Django, iOS/SwiftUI)
+- **iOS/SwiftUI Development**: Build iOS apps, run in Simulator, execute XCTest, manage simulators
 - **Auto-Fix System**: Automatically detect, analyze, and fix errors with AI-powered solutions
 - **Verification Loop**: Iterative run → test → fix cycle until all tests pass
 - **Beautiful CLI Output**: Rich formatting with progress indicators and colored output

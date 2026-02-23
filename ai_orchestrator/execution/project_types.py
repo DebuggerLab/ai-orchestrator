@@ -451,6 +451,233 @@ class DjangoProject(BaseProjectHandler):
         ]
 
 
+class iOSProject(BaseProjectHandler):
+    """Handler for iOS/SwiftUI projects."""
+    
+    name = "ios"
+    priority = 18  # Check before generic Python/Node but after specific frameworks
+    
+    def detect(self, project_path: Path) -> bool:
+        """Detect if this is an iOS/SwiftUI project."""
+        # Check for .xcodeproj
+        if list(project_path.glob("*.xcodeproj")):
+            return True
+        
+        # Check for .xcworkspace
+        if list(project_path.glob("*.xcworkspace")):
+            return True
+        
+        # Check for Package.swift (Swift Package Manager)
+        if self._file_exists(project_path, "Package.swift"):
+            # Verify it's an iOS package by checking content
+            try:
+                content = (project_path / "Package.swift").read_text()
+                if ".iOS" in content or "iOS" in content or "SwiftUI" in content:
+                    return True
+            except Exception:
+                pass
+        
+        # Check for SwiftUI files
+        for swift_file in project_path.rglob("*.swift"):
+            try:
+                content = swift_file.read_text()
+                if "import SwiftUI" in content or "import UIKit" in content:
+                    return True
+            except Exception:
+                continue
+        
+        return False
+    
+    def get_config(self, project_path: Path) -> ProjectConfig:
+        """Get iOS project configuration."""
+        # Find xcodeproj or xcworkspace
+        xcworkspaces = list(project_path.glob("*.xcworkspace"))
+        xcodeprojs = list(project_path.glob("*.xcodeproj"))
+        has_package_swift = self._file_exists(project_path, "Package.swift")
+        
+        # Determine the project/workspace to use
+        workspace_arg = ""
+        project_arg = ""
+        scheme = None
+        
+        if xcworkspaces:
+            workspace_arg = f"-workspace {xcworkspaces[0].name}"
+            scheme = xcworkspaces[0].stem
+        elif xcodeprojs:
+            project_arg = f"-project {xcodeprojs[0].name}"
+            scheme = xcodeprojs[0].stem
+        
+        # Get scheme from xcodebuild list if possible
+        detected_scheme = self._detect_scheme(project_path)
+        if detected_scheme:
+            scheme = detected_scheme
+        
+        # Build command
+        build_args = workspace_arg or project_arg
+        if scheme:
+            build_args += f" -scheme {scheme}"
+        
+        build_command = f"xcodebuild {build_args} -sdk iphonesimulator -configuration Debug build CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+        
+        # Install command for Swift Package Manager
+        install_command = None
+        if has_package_swift:
+            install_command = "swift package resolve"
+        
+        # Test command
+        test_command = f"xcodebuild {build_args} -sdk iphonesimulator -configuration Debug test CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO"
+        
+        # Run command - build and launch in simulator
+        run_command = f"xcodebuild {build_args} -sdk iphonesimulator -configuration Debug build CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO && xcrun simctl boot 'iPhone 15' 2>/dev/null; open -a Simulator"
+        
+        # Config files
+        config_files = ["Package.swift", "Info.plist"]
+        if xcodeprojs:
+            config_files.append(xcodeprojs[0].name + "/project.pbxproj")
+        if xcworkspaces:
+            config_files.append(xcworkspaces[0].name)
+        
+        return ProjectConfig(
+            project_type=self.name,
+            root_path=project_path,
+            install_command=install_command,
+            run_command=run_command,
+            test_command=test_command,
+            build_command=build_command,
+            entry_point=scheme,
+            dependencies_file="Package.swift" if has_package_swift else None,
+            config_files=config_files,
+            environment={
+                "SDKROOT": "iphonesimulator",
+            },
+            error_patterns=self.get_error_patterns()
+        )
+    
+    def _detect_scheme(self, project_path: Path) -> Optional[str]:
+        """Detect available schemes using xcodebuild."""
+        import subprocess
+        
+        xcworkspaces = list(project_path.glob("*.xcworkspace"))
+        xcodeprojs = list(project_path.glob("*.xcodeproj"))
+        
+        args = ["xcodebuild", "-list", "-json"]
+        
+        if xcworkspaces:
+            args.extend(["-workspace", str(xcworkspaces[0])])
+        elif xcodeprojs:
+            args.extend(["-project", str(xcodeprojs[0])])
+        else:
+            return None
+        
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                cwd=str(project_path),
+            )
+            
+            if result.returncode == 0:
+                import json
+                data = json.loads(result.stdout)
+                if "workspace" in data:
+                    schemes = data["workspace"].get("schemes", [])
+                elif "project" in data:
+                    schemes = data["project"].get("schemes", [])
+                else:
+                    schemes = []
+                
+                if schemes:
+                    return schemes[0]
+        except Exception:
+            pass
+        
+        return None
+    
+    def get_install_command(self) -> Optional[str]:
+        """Get command to install dependencies via Swift Package Manager."""
+        return "swift package resolve"
+    
+    def get_run_command(self, scheme: Optional[str] = None) -> str:
+        """Get command to build and run in simulator."""
+        scheme_arg = f"-scheme {scheme}" if scheme else ""
+        return f"xcodebuild {scheme_arg} -sdk iphonesimulator -configuration Debug build && xcrun simctl boot 'iPhone 15' 2>/dev/null; open -a Simulator"
+    
+    def get_test_command(self, scheme: Optional[str] = None) -> str:
+        """Get command to run XCTest."""
+        scheme_arg = f"-scheme {scheme}" if scheme else ""
+        return f"xcodebuild {scheme_arg} -sdk iphonesimulator -configuration Debug test"
+    
+    def get_error_patterns(self) -> List[str]:
+        """Get iOS/Swift error patterns."""
+        return [
+            # Swift compilation errors
+            r"error:.*\.swift:\d+:\d+:",
+            r"cannot find .* in scope",
+            r"type .* has no member",
+            r"missing argument for parameter",
+            r"cannot convert value of type",
+            r"ambiguous use of",
+            r"value of type .* has no member",
+            r"expected .* in .* declaration",
+            r"consecutive declarations on a line",
+            r"use of undeclared type",
+            r"cannot assign to property",
+            r"initializer .* cannot be used",
+            r"invalid redeclaration of",
+            r"use of unresolved identifier",
+            
+            # Code signing errors
+            r"Code Signing Error:",
+            r"Signing for .* requires a development team",
+            r"No signing certificate",
+            r"Provisioning profile .* doesn't match",
+            r"No profiles for .* were found",
+            
+            # Simulator errors
+            r"Unable to boot device",
+            r"Simulator .* not available",
+            r"Failed to boot simulator",
+            r"Device is not available",
+            r"The requested device could not be found",
+            
+            # Build errors
+            r"xcodebuild: error:",
+            r"Build Failed",
+            r"Compiling .* failed",
+            r"Linking .* failed",
+            r"Command .* failed with exit code",
+            
+            # SwiftUI preview errors
+            r"Preview Crashed",
+            r"Cannot preview in this file",
+            r"PreviewProvider .* not found",
+            r"Previews are limited to 15 seconds",
+            
+            # Dependency errors
+            r"Package resolution failed",
+            r"could not find module",
+            r"No such module",
+            r"Missing package product",
+            r"dependency .* is not used",
+            
+            # Runtime errors
+            r"fatal error:",
+            r"EXC_BAD_ACCESS",
+            r"EXC_BREAKPOINT",
+            r"Thread \d+: Signal",
+            r"Assertion failed",
+            
+            # Configuration errors
+            r"target .* not found",
+            r"scheme .* not found",
+            r"workspace .* not found",
+            r"project .* not found",
+            r"The file .* couldn't be opened",
+        ]
+
+
 class GenericProject(BaseProjectHandler):
     """Fallback handler for generic projects."""
     
@@ -509,6 +736,7 @@ PROJECT_HANDLERS: List[BaseProjectHandler] = sorted(
         ReactProject(),
         DjangoProject(),
         FlaskProject(),
+        iOSProject(),
         NodeJSProject(),
         PythonProject(),
         GenericProject(),

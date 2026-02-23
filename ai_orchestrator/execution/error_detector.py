@@ -22,6 +22,12 @@ class ErrorCategory(Enum):
     MEMORY = "memory"
     PORT_IN_USE = "port_in_use"
     TEST_FAILURE = "test_failure"
+    # iOS-specific categories
+    SWIFT_COMPILATION = "swift_compilation"
+    CODE_SIGNING = "code_signing"
+    SIMULATOR = "simulator"
+    XCODE_BUILD = "xcode_build"
+    SWIFTUI_PREVIEW = "swiftui_preview"
     UNKNOWN = "unknown"
 
 
@@ -134,6 +140,74 @@ class ErrorDetector:
             r"\d+ failing",
             r"pytest.*failed",
         ],
+        # iOS/Swift specific patterns
+        ErrorCategory.SWIFT_COMPILATION: [
+            r"error:.*\.swift:\d+:\d+:",
+            r"cannot find .* in scope",
+            r"type .* has no member",
+            r"missing argument for parameter",
+            r"cannot convert value of type",
+            r"ambiguous use of",
+            r"value of type .* has no member",
+            r"expected .* in .* declaration",
+            r"consecutive declarations on a line",
+            r"use of undeclared type",
+            r"cannot assign to property",
+            r"initializer .* cannot be used",
+            r"invalid redeclaration of",
+            r"use of unresolved identifier",
+            r"No such module",
+            r"could not find module",
+            r"Missing package product",
+        ],
+        ErrorCategory.CODE_SIGNING: [
+            r"Code Signing Error:",
+            r"Signing for .* requires a development team",
+            r"No signing certificate",
+            r"Provisioning profile .* doesn't match",
+            r"No profiles for .* were found",
+            r"Code signing is required",
+            r"Xcode couldn't find any iOS App Development",
+            r"requires a provisioning profile",
+            r"CSSMERR_TP_NOT_TRUSTED",
+        ],
+        ErrorCategory.SIMULATOR: [
+            r"Unable to boot device",
+            r"Simulator .* not available",
+            r"Failed to boot simulator",
+            r"Device is not available",
+            r"The requested device could not be found",
+            r"xcrun: error: unable to find",
+            r"simctl: error:",
+            r"CoreSimulator.*error",
+            r"No simulator runtime paired",
+            r"Simulator service did not respond",
+        ],
+        ErrorCategory.XCODE_BUILD: [
+            r"xcodebuild: error:",
+            r"Build Failed",
+            r"Compiling .* failed",
+            r"Linking .* failed",
+            r"Command .* failed with exit code",
+            r"target .* not found",
+            r"scheme .* not found",
+            r"workspace .* not found",
+            r"project .* not found",
+            r"The file .* couldn't be opened",
+            r"clang: error:",
+            r"ld: error:",
+            r"Swift Compiler Error",
+            r"\*\* BUILD FAILED \*\*",
+        ],
+        ErrorCategory.SWIFTUI_PREVIEW: [
+            r"Preview Crashed",
+            r"Cannot preview in this file",
+            r"PreviewProvider .* not found",
+            r"Previews are limited to 15 seconds",
+            r"Preview provider timed out",
+            r"Failed to build .* for previewing",
+            r"Remote preview service.*terminated",
+        ],
     }
     
     # Fix suggestions for each category
@@ -193,6 +267,41 @@ class ErrorDetector:
             "Review the failing test assertions",
             "Check if test fixtures are set up correctly",
             "Verify expected vs actual values",
+        ],
+        # iOS-specific fix suggestions
+        ErrorCategory.SWIFT_COMPILATION: [
+            "Check the Swift syntax at the indicated file and line",
+            "Verify all imports are correctly declared",
+            "Check that type names and property names are spelled correctly",
+            "Ensure proper use of optionals and unwrapping",
+            "Run 'swift package resolve' to update dependencies",
+        ],
+        ErrorCategory.CODE_SIGNING: [
+            "For simulator builds, add CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO to build command",
+            "Open Xcode and set signing to 'Automatically manage signing'",
+            "Add a development team in Xcode project settings",
+            "For CI/CD, ensure certificates are installed in the keychain",
+        ],
+        ErrorCategory.SIMULATOR: [
+            "List available simulators: xcrun simctl list devices",
+            "Boot a different simulator version",
+            "Reset simulator: xcrun simctl erase <device-udid>",
+            "Restart Simulator.app: killall Simulator && open -a Simulator",
+            "Update Xcode to get newer simulator runtimes",
+        ],
+        ErrorCategory.XCODE_BUILD: [
+            "Clean build folder: xcodebuild clean",
+            "Delete DerivedData: rm -rf ~/Library/Developer/Xcode/DerivedData",
+            "Verify scheme exists: xcodebuild -list",
+            "Check if project file is corrupted",
+            "Ensure Xcode command line tools are installed: xcode-select --install",
+        ],
+        ErrorCategory.SWIFTUI_PREVIEW: [
+            "Restart Xcode to refresh previews",
+            "Check that PreviewProvider conforms correctly",
+            "Simplify the preview code to identify issues",
+            "Clean build folder and rebuild",
+            "Ensure the preview device is available in Xcode",
         ],
     }
     

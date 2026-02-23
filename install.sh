@@ -16,7 +16,7 @@ set -e
 # ============================================================================
 # Configuration
 # ============================================================================
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 MIN_MACOS_VERSION="12.0"
 MIN_PYTHON_VERSION="3.11"
 DEFAULT_INSTALL_DIR="$HOME/ai-orchestrator"
@@ -24,6 +24,35 @@ DEFAULT_MCP_PORT="3000"
 REPO_URL="https://github.com/dipcse07/ai-orchestrator.git"
 LOG_FILE="/tmp/ai-orchestrator-install.log"
 BACKUP_DIR="/tmp/ai-orchestrator-backup-$(date +%Y%m%d_%H%M%S)"
+
+# ============================================================================
+# Required Packages List
+# ============================================================================
+# Core AI client packages
+REQUIRED_PACKAGES=(
+    "openai"
+    "anthropic"
+    "google-generativeai"
+    "rich"
+    "click"
+    "pydantic"
+    "python-dotenv"
+    "requests"
+)
+
+# Additional packages for full functionality
+OPTIONAL_PACKAGES=(
+    "mcp"
+)
+
+# Package installation status tracking
+declare -A PACKAGE_STATUS
+declare -A PACKAGE_RETRIES
+declare -A PACKAGE_ERRORS
+
+# Retry configuration
+MAX_INSTALL_RETRIES=3
+RETRY_DELAY=2
 
 # ============================================================================
 # Colors and Formatting
@@ -138,6 +167,271 @@ spinner() {
         printf "\b\b\b\b\b\b"
     done
     printf "      \b\b\b\b\b\b"
+}
+
+# ============================================================================
+# Package Installation Functions with Retry Logic
+# ============================================================================
+
+# Get the import name for a package (handles packages with different import names)
+get_import_name() {
+    local package="$1"
+    case "$package" in
+        "google-generativeai")
+            echo "google.generativeai"
+            ;;
+        "python-dotenv")
+            echo "dotenv"
+            ;;
+        *)
+            echo "${package//-/_}"
+            ;;
+    esac
+}
+
+# Check if a package is installed and importable
+check_package_installed() {
+    local package="$1"
+    local import_name=$(get_import_name "$package")
+    
+    "$INSTALL_DIR/venv/bin/python" -c "import $import_name" 2>/dev/null
+    return $?
+}
+
+# Install a single package with retry logic
+install_package_with_retry() {
+    local package="$1"
+    local attempt=1
+    local success=false
+    local last_error=""
+    
+    PACKAGE_RETRIES[$package]=0
+    
+    while [ $attempt -le $MAX_INSTALL_RETRIES ] && [ "$success" = false ]; do
+        PACKAGE_RETRIES[$package]=$attempt
+        
+        if [ $attempt -gt 1 ]; then
+            echo -e "${YELLOW}      Retry $attempt/$MAX_INSTALL_RETRIES for $package...${NC}"
+            log "Retry $attempt for package $package"
+            sleep $RETRY_DELAY
+        fi
+        
+        case $attempt in
+            1)
+                # First attempt: standard install
+                if pip install "$package" >> "$LOG_FILE" 2>&1; then
+                    success=true
+                else
+                    last_error="Standard install failed"
+                fi
+                ;;
+            2)
+                # Second attempt: upgrade pip and use --no-cache-dir
+                echo -e "${DIM}      Upgrading pip and retrying...${NC}"
+                pip install --upgrade pip >> "$LOG_FILE" 2>&1
+                if pip install --no-cache-dir "$package" >> "$LOG_FILE" 2>&1; then
+                    success=true
+                else
+                    last_error="No-cache install failed"
+                fi
+                ;;
+            3)
+                # Third attempt: clear cache, use --force-reinstall
+                echo -e "${DIM}      Clearing cache and force reinstalling...${NC}"
+                pip cache purge >> "$LOG_FILE" 2>&1 || true
+                if pip install --force-reinstall --no-deps "$package" >> "$LOG_FILE" 2>&1; then
+                    # Install dependencies separately
+                    pip install "$package" >> "$LOG_FILE" 2>&1
+                    success=true
+                else
+                    last_error="Force reinstall failed"
+                fi
+                ;;
+        esac
+        
+        # Verify installation after each attempt
+        if [ "$success" = true ]; then
+            if ! check_package_installed "$package"; then
+                success=false
+                last_error="Package installed but not importable"
+            fi
+        fi
+        
+        attempt=$((attempt + 1))
+    done
+    
+    if [ "$success" = true ]; then
+        PACKAGE_STATUS[$package]="installed"
+        PACKAGE_ERRORS[$package]=""
+        return 0
+    else
+        PACKAGE_STATUS[$package]="failed"
+        PACKAGE_ERRORS[$package]="$last_error"
+        return 1
+    fi
+}
+
+# Install all required packages
+install_required_packages() {
+    local failed_packages=()
+    local success_packages=()
+    local retry_packages=()
+    
+    echo ""
+    echo -e "${BOLD}Installing required packages:${NC}"
+    echo ""
+    
+    for package in "${REQUIRED_PACKAGES[@]}"; do
+        echo -ne "   ${EMOJI_LOADING} Installing ${CYAN}$package${NC}... "
+        
+        if install_package_with_retry "$package"; then
+            local retries=${PACKAGE_RETRIES[$package]}
+            if [ "$retries" -gt 1 ]; then
+                echo -e "${GREEN}${EMOJI_CHECK} OK${NC} ${DIM}(after $retries attempts)${NC}"
+                retry_packages+=("$package")
+            else
+                echo -e "${GREEN}${EMOJI_CHECK} OK${NC}"
+            fi
+            success_packages+=("$package")
+        else
+            echo -e "${RED}${EMOJI_CROSS} FAILED${NC}"
+            echo -e "      ${DIM}Error: ${PACKAGE_ERRORS[$package]}${NC}"
+            failed_packages+=("$package")
+        fi
+    done
+    
+    echo ""
+    
+    # Return status
+    if [ ${#failed_packages[@]} -eq 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Verify all packages are installed
+verify_all_packages() {
+    local missing_packages=()
+    local verified_packages=()
+    
+    echo ""
+    echo -e "${BOLD}Verifying package installations:${NC}"
+    echo ""
+    
+    for package in "${REQUIRED_PACKAGES[@]}"; do
+        echo -ne "   Checking ${CYAN}$package${NC}... "
+        
+        if check_package_installed "$package"; then
+            echo -e "${GREEN}${EMOJI_CHECK}${NC}"
+            verified_packages+=("$package")
+            PACKAGE_STATUS[$package]="verified"
+        else
+            echo -e "${RED}${EMOJI_CROSS} Missing${NC}"
+            missing_packages+=("$package")
+            PACKAGE_STATUS[$package]="missing"
+        fi
+    done
+    
+    echo ""
+    
+    if [ ${#missing_packages[@]} -gt 0 ]; then
+        echo -e "${YELLOW}Found ${#missing_packages[@]} missing package(s). Attempting reinstallation...${NC}"
+        echo ""
+        
+        for package in "${missing_packages[@]}"; do
+            echo -ne "   ${EMOJI_LOADING} Reinstalling ${CYAN}$package${NC}... "
+            
+            if install_package_with_retry "$package"; then
+                echo -e "${GREEN}${EMOJI_CHECK} OK${NC}"
+            else
+                echo -e "${RED}${EMOJI_CROSS} FAILED${NC}"
+            fi
+        done
+        echo ""
+    fi
+    
+    # Final count of failed packages
+    local final_failed=0
+    for package in "${REQUIRED_PACKAGES[@]}"; do
+        if [ "${PACKAGE_STATUS[$package]}" = "failed" ] || [ "${PACKAGE_STATUS[$package]}" = "missing" ]; then
+            if ! check_package_installed "$package"; then
+                final_failed=$((final_failed + 1))
+            fi
+        fi
+    done
+    
+    return $final_failed
+}
+
+# Print package installation summary
+print_package_summary() {
+    echo ""
+    echo -e "${BOLD}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}                    Package Installation Summary${NC}"
+    echo -e "${BOLD}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    local success_count=0
+    local failed_count=0
+    local retry_count=0
+    local failed_list=()
+    
+    printf "   ${BOLD}%-25s %-12s %-10s %-20s${NC}\n" "Package" "Status" "Retries" "Notes"
+    echo "   ─────────────────────────────────────────────────────────────"
+    
+    for package in "${REQUIRED_PACKAGES[@]}"; do
+        local status="${PACKAGE_STATUS[$package]:-unknown}"
+        local retries="${PACKAGE_RETRIES[$package]:-0}"
+        local error="${PACKAGE_ERRORS[$package]:-}"
+        local notes=""
+        
+        # Check actual installation status
+        if check_package_installed "$package"; then
+            status="✓ OK"
+            success_count=$((success_count + 1))
+            if [ "$retries" -gt 1 ]; then
+                notes="Needed retry"
+                retry_count=$((retry_count + 1))
+            fi
+            printf "   ${GREEN}%-25s${NC} ${GREEN}%-12s${NC} %-10s %-20s\n" "$package" "$status" "$retries" "$notes"
+        else
+            status="✗ FAILED"
+            failed_count=$((failed_count + 1))
+            failed_list+=("$package")
+            notes="${error:0:18}"
+            printf "   ${RED}%-25s${NC} ${RED}%-12s${NC} %-10s %-20s\n" "$package" "$status" "$retries" "$notes"
+        fi
+    done
+    
+    echo ""
+    echo "   ─────────────────────────────────────────────────────────────"
+    echo -e "   ${GREEN}Successful: $success_count${NC}  |  ${YELLOW}Needed retry: $retry_count${NC}  |  ${RED}Failed: $failed_count${NC}"
+    echo ""
+    
+    # If there are failures, provide manual fix commands
+    if [ $failed_count -gt 0 ]; then
+        echo -e "${YELLOW}${EMOJI_WARN} Some packages failed to install. Try these manual fixes:${NC}"
+        echo ""
+        echo -e "   ${DIM}# Activate the virtual environment:${NC}"
+        echo -e "   ${CYAN}source $INSTALL_DIR/venv/bin/activate${NC}"
+        echo ""
+        echo -e "   ${DIM}# Try installing failed packages manually:${NC}"
+        for pkg in "${failed_list[@]}"; do
+            echo -e "   ${CYAN}pip install --upgrade $pkg${NC}"
+        done
+        echo ""
+        echo -e "   ${DIM}# Or try with verbose output to see errors:${NC}"
+        for pkg in "${failed_list[@]}"; do
+            echo -e "   ${CYAN}pip install -v $pkg 2>&1 | tail -50${NC}"
+        done
+        echo ""
+        echo -e "   ${DIM}# Check the installation log for details:${NC}"
+        echo -e "   ${CYAN}cat $LOG_FILE | grep -A5 'ERROR\\|error\\|Failed'${NC}"
+        echo ""
+    fi
+    
+    return $failed_count
 }
 
 # ============================================================================
@@ -468,24 +762,103 @@ install_dependencies() {
     cd "$INSTALL_DIR"
     source "$INSTALL_DIR/venv/bin/activate"
     
-    # Install main requirements
+    # Upgrade pip first for better compatibility
+    print_progress "Upgrading pip to latest version"
+    pip install --upgrade pip >> "$LOG_FILE" 2>&1
+    print_success "Pip upgraded"
+    
+    # Track if requirements.txt install was successful
+    local requirements_success=true
+    
+    # Try installing from requirements.txt first
     if [ -f "requirements.txt" ]; then
-        print_progress "Installing main requirements"
-        pip install -r requirements.txt > /dev/null 2>&1
-        print_success "Main requirements installed"
+        print_progress "Installing from requirements.txt"
+        echo "--- Installing requirements.txt ---" >> "$LOG_FILE"
+        
+        if pip install --upgrade -r requirements.txt >> "$LOG_FILE" 2>&1; then
+            print_success "Requirements.txt installed successfully"
+        else
+            print_warning "Some packages from requirements.txt failed to install"
+            requirements_success=false
+        fi
     fi
     
     # Install MCP server requirements
     if [ -f "mcp_server/requirements.txt" ]; then
         print_progress "Installing MCP server requirements"
-        pip install -r mcp_server/requirements.txt > /dev/null 2>&1
-        print_success "MCP server requirements installed"
+        echo "--- Installing MCP requirements.txt ---" >> "$LOG_FILE"
+        
+        if pip install --upgrade -r mcp_server/requirements.txt >> "$LOG_FILE" 2>&1; then
+            print_success "MCP server requirements installed"
+        else
+            print_warning "Some MCP packages failed to install"
+            requirements_success=false
+        fi
     fi
+    
+    # Verify and install missing packages individually with retry logic
+    print_step "Verifying and Fixing Package Installations"
+    
+    # First verification pass
+    local missing_found=false
+    for package in "${REQUIRED_PACKAGES[@]}"; do
+        if ! check_package_installed "$package"; then
+            missing_found=true
+            break
+        fi
+    done
+    
+    if [ "$missing_found" = true ] || [ "$requirements_success" = false ]; then
+        print_warning "Some packages missing or failed. Installing individually with retry logic..."
+        
+        # Install each package individually with retry
+        install_required_packages
+        
+        # Second verification and auto-fix
+        verify_all_packages
+    else
+        print_success "All required packages verified"
+        # Mark all as verified
+        for package in "${REQUIRED_PACKAGES[@]}"; do
+            PACKAGE_STATUS[$package]="verified"
+            PACKAGE_RETRIES[$package]=0
+        done
+    fi
+    
+    # Install optional packages (non-critical)
+    print_progress "Installing optional packages"
+    for package in "${OPTIONAL_PACKAGES[@]}"; do
+        if ! check_package_installed "$package"; then
+            pip install "$package" >> "$LOG_FILE" 2>&1 || true
+        fi
+    done
     
     # Install package in editable mode
     print_progress "Installing AI Orchestrator package"
-    pip install -e . > /dev/null 2>&1
-    print_success "AI Orchestrator package installed"
+    if pip install -e . >> "$LOG_FILE" 2>&1; then
+        print_success "AI Orchestrator package installed"
+    else
+        print_warning "Editable install failed, trying regular install"
+        pip install . >> "$LOG_FILE" 2>&1 || true
+    fi
+    
+    # Print package summary
+    print_package_summary
+    
+    # Final verification
+    local failed_count=0
+    for package in "${REQUIRED_PACKAGES[@]}"; do
+        if ! check_package_installed "$package"; then
+            failed_count=$((failed_count + 1))
+        fi
+    done
+    
+    if [ $failed_count -gt 0 ]; then
+        print_warning "$failed_count critical package(s) failed to install. Installation may not work correctly."
+        log_error "Failed packages: $failed_count"
+    else
+        print_success "All dependencies installed and verified!"
+    fi
     
     STEPS_COMPLETED+=("dependencies")
 }
@@ -865,13 +1238,15 @@ start_mcp_server() {
 # Verification
 # ============================================================================
 run_verification() {
-    print_step "Running Verification"
+    print_step "Running Final Verification"
     
     local verification_passed=true
     local report_file="$INSTALL_DIR/verification_report.txt"
+    local missing_packages=()
     
     echo "AI Orchestrator Verification Report" > "$report_file"
     echo "Generated: $(date)" >> "$report_file"
+    echo "Installer Version: $SCRIPT_VERSION" >> "$report_file"
     echo "========================================" >> "$report_file"
     echo "" >> "$report_file"
     
@@ -886,21 +1261,50 @@ run_verification() {
         verification_passed=false
     fi
     
-    # Test pip packages
-    print_progress "Verifying pip packages"
-    local packages=("openai" "anthropic" "google-generativeai" "rich" "click" "pydantic")
-    for pkg in "${packages[@]}"; do
-        if "$INSTALL_DIR/venv/bin/python" -c "import ${pkg//-/_}" 2>/dev/null; then
+    # Test pip packages using the defined REQUIRED_PACKAGES
+    print_progress "Verifying required packages"
+    echo "" >> "$report_file"
+    echo "Package Verification:" >> "$report_file"
+    
+    for pkg in "${REQUIRED_PACKAGES[@]}"; do
+        if check_package_installed "$pkg"; then
             echo "✓ Package $pkg: OK" >> "$report_file"
         else
             echo "✗ Package $pkg: MISSING" >> "$report_file"
+            missing_packages+=("$pkg")
             verification_passed=false
         fi
     done
-    print_success "Pip packages verified"
+    
+    # If there are missing packages, attempt auto-fix
+    if [ ${#missing_packages[@]} -gt 0 ]; then
+        print_warning "${#missing_packages[@]} package(s) missing. Attempting auto-fix..."
+        echo "" >> "$report_file"
+        echo "Auto-fix attempt:" >> "$report_file"
+        
+        source "$INSTALL_DIR/venv/bin/activate"
+        
+        for pkg in "${missing_packages[@]}"; do
+            echo -ne "   Fixing ${CYAN}$pkg${NC}... "
+            
+            if install_package_with_retry "$pkg"; then
+                echo -e "${GREEN}${EMOJI_CHECK} Fixed${NC}"
+                echo "✓ Auto-fixed: $pkg" >> "$report_file"
+            else
+                echo -e "${RED}${EMOJI_CROSS} Failed${NC}"
+                echo "✗ Auto-fix failed: $pkg" >> "$report_file"
+            fi
+        done
+    else
+        print_success "All required packages verified"
+    fi
+    
+    echo "" >> "$report_file"
     
     # Test API connections (only if keys provided)
     print_progress "Testing API connections"
+    echo "" >> "$report_file"
+    echo "API Connectivity:" >> "$report_file"
     
     if [ -n "$OPENAI_KEY" ]; then
         local test_result=$("$INSTALL_DIR/venv/bin/python" -c "
@@ -919,10 +1323,56 @@ except Exception as e:
             print_warning "OpenAI API connection failed: $test_result"
             echo "✗ OpenAI API: $test_result" >> "$report_file"
         fi
+    else
+        echo "○ OpenAI API: Not configured" >> "$report_file"
     fi
+    
+    if [ -n "$ANTHROPIC_KEY" ]; then
+        local test_result=$("$INSTALL_DIR/venv/bin/python" -c "
+import anthropic
+client = anthropic.Anthropic(api_key='$ANTHROPIC_KEY')
+try:
+    # Just verify we can create a client
+    print('OK')
+except Exception as e:
+    print(f'FAILED: {e}')
+" 2>&1)
+        if [[ "$test_result" == "OK" ]]; then
+            print_success "Anthropic API configured"
+            echo "✓ Anthropic API: OK" >> "$report_file"
+        else
+            print_warning "Anthropic API issue: $test_result"
+            echo "○ Anthropic API: $test_result" >> "$report_file"
+        fi
+    else
+        echo "○ Anthropic API: Not configured" >> "$report_file"
+    fi
+    
+    if [ -n "$GEMINI_KEY" ]; then
+        local test_result=$("$INSTALL_DIR/venv/bin/python" -c "
+import google.generativeai as genai
+try:
+    genai.configure(api_key='$GEMINI_KEY')
+    print('OK')
+except Exception as e:
+    print(f'FAILED: {e}')
+" 2>&1)
+        if [[ "$test_result" == "OK" ]]; then
+            print_success "Gemini API configured"
+            echo "✓ Gemini API: OK" >> "$report_file"
+        else
+            print_warning "Gemini API issue: $test_result"
+            echo "○ Gemini API: $test_result" >> "$report_file"
+        fi
+    else
+        echo "○ Gemini API: Not configured" >> "$report_file"
+    fi
+    
+    echo "" >> "$report_file"
     
     # Test MCP server
     print_progress "Verifying MCP server"
+    echo "Server Status:" >> "$report_file"
     if pgrep -f "mcp_server.server" > /dev/null 2>&1; then
         print_success "MCP server is running"
         echo "✓ MCP Server: RUNNING" >> "$report_file"
@@ -942,9 +1392,36 @@ except Exception as e:
         echo "○ Cursor Config: NOT FOUND" >> "$report_file"
     fi
     
+    # Run test script if available
+    if [ -f "$INSTALL_DIR/scripts/test-apis.sh" ]; then
+        print_progress "Running API tests"
+        echo "" >> "$report_file"
+        echo "API Test Results:" >> "$report_file"
+        
+        if bash "$INSTALL_DIR/scripts/test-apis.sh" >> "$report_file" 2>&1; then
+            print_success "API tests completed"
+        else
+            print_warning "Some API tests may have failed"
+        fi
+    fi
+    
     echo "" >> "$report_file"
     echo "========================================" >> "$report_file"
     echo "Verification completed at $(date)" >> "$report_file"
+    
+    # Final package check
+    local final_missing=0
+    for pkg in "${REQUIRED_PACKAGES[@]}"; do
+        if ! check_package_installed "$pkg"; then
+            final_missing=$((final_missing + 1))
+        fi
+    done
+    
+    if [ $final_missing -gt 0 ]; then
+        verification_passed=false
+        echo "" >> "$report_file"
+        echo "WARNING: $final_missing critical package(s) still missing!" >> "$report_file"
+    fi
     
     print_info "Verification report saved to: $report_file"
     
@@ -952,6 +1429,7 @@ except Exception as e:
         print_success "All verifications passed!"
     else
         print_warning "Some verifications failed. Check the report for details."
+        print_info "Run '$INSTALL_DIR/scripts/test-apis.sh' for detailed API testing."
     fi
     
     STEPS_COMPLETED+=("verification")

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://raw.githubusercontent.com/getcursor/cursor/main/schemas/settings.schema.json",
+  "_comment": "Copy the mcpServers section into your Cursor settings.json",
+  
+  "mcpServers": {
+    "ai-orchestrator": {
+      "command": "python",
+      "args": [
+        "/home/ubuntu/ai_orchestrator/mcp_server/server.py"
+      ],
+      "env": {
+        "PYTHONPATH": "/home/ubuntu/ai_orchestrator"
+      },
+      "cwd": "/home/ubuntu/ai_orchestrator/mcp_server"
+    }
+  },
+
+  "_instructions": [
+    "1. Open Cursor Settings: Cmd+, (Mac) or Ctrl+, (Windows/Linux)",
+    "2. Search for 'MCP' and click 'Edit in settings.json'",
+    "3. Add the mcpServers section above to your settings",
+    "4. Adjust paths if your installation is in a different location",
+    "5. Restart Cursor for changes to take effect"
+  ],
+
+  "_windowsExample": {
+    "mcpServers": {
+      "ai-orchestrator": {
+        "command": "python",
+        "args": [
+          "C:\\Users\\YourName\\ai_orchestrator\\mcp_server\\server.py"
+        ],
+        "env": {
+          "PYTHONPATH": "C:\\Users\\YourName\\ai_orchestrator"
+        },
+        "cwd": "C:\\Users\\YourName\\ai_orchestrator\\mcp_server"
+      }
+    }
+  },
+
+  "_macExample": {
+    "mcpServers": {
+      "ai-orchestrator": {
+        "command": "python3",
+        "args": [
+          "/Users/yourname/ai_orchestrator/mcp_server/server.py"
+        ],
+        "env": {
+          "PYTHONPATH": "/Users/yourname/ai_orchestrator"
+        },
+        "cwd": "/Users/yourname/ai_orchestrator/mcp_server"
+      }
+    }
+  },
+
+  "_withVirtualEnv": {
+    "_comment": "Use this if you have a Python virtual environment",
+    "mcpServers": {
+      "ai-orchestrator": {
+        "command": "/home/ubuntu/ai_orchestrator/venv/bin/python",
+        "args": [
+          "/home/ubuntu/ai_orchestrator/mcp_server/server.py"
+        ],
+        "env": {
+          "PYTHONPATH": "/home/ubuntu/ai_orchestrator",
+          "VIRTUAL_ENV": "/home/ubuntu/ai_orchestrator/venv"
+        },
+        "cwd": "/home/ubuntu/ai_orchestrator/mcp_server"
+      }
+    }
+  },
+
+  "_troubleshooting": {
+    "serverNotStarting": [
+      "1. Verify Python is installed: which python or where python",
+      "2. Check the path to server.py exists",
+      "3. Ensure all dependencies are installed",
+      "4. Check .env file has valid API keys"
+    ],
+    "toolsNotAppearing": [
+      "1. Completely restart Cursor (not just reload)",
+      "2. Check Output panel for MCP errors",
+      "3. Verify Cursor version supports MCP (0.40.0+)"
+    ],
+    "connectionErrors": [
+      "1. Test server manually: python server.py",
+      "2. Check for port conflicts",
+      "3. Verify PYTHONPATH is correct"
+    ]
+  }
+}

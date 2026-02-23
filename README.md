@@ -138,7 +138,94 @@ ai-orchestrator run "Audit this function for best practices"
 
 ## 🖥️ Cursor IDE Integration
 
-### Setting Up in Cursor
+The AI Orchestrator integrates with Cursor IDE in two ways:
+
+### Option 1: MCP Server Integration (Recommended)
+
+Use the Model Context Protocol (MCP) for seamless AI orchestration directly in Cursor's chat and composer.
+
+```
+┌────────────────────────────────────────────────────────┐
+│                    Cursor IDE                          │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │              MCP Client (Built-in)              │  │
+│  └───────────────────────┬─────────────────────────┘  │
+│                          │                             │
+│                          ▼                             │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │        AI Orchestrator MCP Server               │  │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ │  │
+│  │  │ ChatGPT │ │ Claude  │ │ Gemini  │ │ Kimi  │ │  │
+│  │  │ (Arch)  │ │ (Code)  │ │(Reason) │ │(Review│ │  │
+│  │  └─────────┘ └─────────┘ └─────────┘ └───────┘ │  │
+│  └─────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
+```
+
+#### Quick Setup
+
+1. **Install the MCP Server:**
+   ```bash
+   cd /home/ubuntu/ai_orchestrator/mcp_server
+   pip install -r requirements.txt
+   ```
+
+2. **Add to Cursor settings.json** (`Cmd+,` → search "MCP" → Edit in settings.json):
+   ```json
+   {
+     "mcpServers": {
+       "ai-orchestrator": {
+         "command": "python",
+         "args": ["/home/ubuntu/ai_orchestrator/mcp_server/server.py"],
+         "env": {
+           "PYTHONPATH": "/home/ubuntu/ai_orchestrator"
+         },
+         "cwd": "/home/ubuntu/ai_orchestrator/mcp_server"
+       }
+     }
+   }
+   ```
+
+3. **Restart Cursor** and use in chat:
+   ```
+   @ai-orchestrator orchestrate_task("Design and implement a REST API")
+   @ai-orchestrator analyze_task("Build a user authentication system")
+   @ai-orchestrator route_to_model("Review this code for security", "moonshot")
+   ```
+
+#### Available MCP Tools
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `orchestrate_task` | Full multi-model task execution | `orchestrate_task("Build a todo app")` |
+| `analyze_task` | See routing plan without executing | `analyze_task("Create a REST API")` |
+| `route_to_model` | Send to specific model | `route_to_model("Fix this bug", "anthropic")` |
+| `check_status` | Check available models | `check_status()` |
+| `get_available_models` | List all models | `get_available_models()` |
+
+#### Cursor Integration Documentation
+
+📚 **Full setup guide:** [`cursor_integration/CURSOR_SETUP.md`](cursor_integration/CURSOR_SETUP.md)
+
+📋 **Cursor rules template:** [`cursor_integration/.cursorrules`](cursor_integration/.cursorrules)
+
+⚙️ **Settings template:** [`cursor_integration/cursor-settings.json`](cursor_integration/cursor-settings.json)
+
+#### Example Workflows
+
+See complete examples in [`cursor_integration/examples/`](cursor_integration/examples/):
+
+| Example | Description |
+|---------|-------------|
+| [01_rest_api.md](cursor_integration/examples/01_rest_api.md) | Building a REST API with task breakdown |
+| [02_fullstack_webapp.md](cursor_integration/examples/02_fullstack_webapp.md) | Complex full-stack orchestration |
+| [03_code_review.md](cursor_integration/examples/03_code_review.md) | Security review and refactoring workflow |
+
+---
+
+### Option 2: CLI in Terminal
+
+Use the CLI directly from Cursor's integrated terminal:
 
 1. **Open Terminal**: Press `` Ctrl+` `` in Cursor to open the integrated terminal
 
@@ -158,9 +245,9 @@ ai-orchestrator run "Audit this function for best practices"
    ai-orchestrator run "Your task here"
    ```
 
-### Cursor Workflow Examples
+#### CLI Workflow Examples
 
-#### Example 1: Feature Development
+**Example 1: Feature Development**
 ```bash
 # Step 1: Get architecture guidance
 ai-orchestrator run "Design the architecture for user authentication with OAuth2"
@@ -172,19 +259,19 @@ ai-orchestrator run "Implement OAuth2 authentication handler in Python" -o auth.
 ai-orchestrator run "Review this OAuth implementation for security issues"
 ```
 
-#### Example 2: Bug Investigation
+**Example 2: Bug Investigation**
 ```bash
 # Analyze and debug
 ai-orchestrator run "Debug: API returns 500 error when user data contains unicode"
 ```
 
-#### Example 3: Complex Task
+**Example 3: Complex Task**
 ```bash
 # AI Orchestrator automatically breaks this into subtasks
 ai-orchestrator run "Design and implement a caching layer for our API with Redis, including architecture decisions and code review"
 ```
 
-### Creating a Cursor Task
+#### Creating a Cursor Task
 
 Add to `.vscode/tasks.json`:
 

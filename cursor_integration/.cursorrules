@@ -1,0 +1,179 @@
+# AI Orchestrator Rules for Cursor
+
+# This file instructs Cursor on how to use the AI Orchestrator MCP server
+# for intelligent multi-model task routing during project development.
+
+## Overview
+
+You have access to an AI Orchestrator that routes tasks to specialized AI models:
+- **ChatGPT (OpenAI)**: Architecture, system design, roadmaps, planning
+- **Claude (Anthropic)**: Coding, implementation, debugging, technical writing
+- **Gemini (Google)**: Reasoning, analysis, explanations, research
+- **Kimi (Moonshot)**: Code review, quality assessment, best practices
+
+## When to Use Each Model
+
+### Use ChatGPT (via `route_to_model(task, "openai")`) for:
+- System architecture design
+- API design and specifications
+- Project roadmaps and planning
+- Database schema design
+- Microservices architecture
+- Technology stack decisions
+- High-level design documents
+
+### Use Claude (via `route_to_model(task, "anthropic")`) for:
+- Writing new code and functions
+- Debugging and fixing errors
+- Code refactoring and optimization
+- Implementing features from specs
+- Writing tests
+- Technical documentation
+- Code explanations
+
+### Use Gemini (via `route_to_model(task, "gemini")`) for:
+- Complex reasoning tasks
+- Explaining algorithms and concepts
+- Research and analysis
+- Mathematical computations
+- Multi-step problem solving
+- Comparing technologies/approaches
+- Learning new concepts
+
+### Use Kimi (via `route_to_model(task, "moonshot")`) for:
+- Code review and quality checks
+- Security vulnerability analysis
+- Best practice recommendations
+- Performance optimization suggestions
+- Style and consistency checks
+- PR review assistance
+
+## How to Break Down Projects
+
+When given a complex project, follow this workflow:
+
+1. **Architecture Phase** (Use ChatGPT)
+   - Start with `analyze_task()` to understand requirements
+   - Request high-level architecture design
+   - Define component boundaries and interfaces
+   - Create a project roadmap
+
+2. **Implementation Phase** (Use Claude)
+   - Break architecture into coding tasks
+   - Implement core functionality first
+   - Add error handling and edge cases
+   - Write accompanying tests
+
+3. **Reasoning Phase** (Use Gemini)
+   - Validate algorithmic approaches
+   - Analyze performance implications
+   - Explain complex decisions
+   - Research alternative solutions
+
+4. **Review Phase** (Use Kimi)
+   - Review completed code for quality
+   - Check for security issues
+   - Ensure best practices are followed
+   - Suggest final improvements
+
+## Best Practices for Multi-Model Orchestration
+
+### DO:
+- Use `orchestrate_task()` for complex, multi-step tasks
+- Use `analyze_task()` before starting large projects
+- Use `route_to_model()` when you know which model is best
+- Provide clear, specific task descriptions
+- Include relevant context and code snippets
+- Break large tasks into smaller, focused subtasks
+
+### DON'T:
+- Route simple coding tasks to ChatGPT (use Claude)
+- Send code review tasks to Claude (use Kimi)
+- Use `orchestrate_task()` for quick one-off questions
+- Provide vague or ambiguous task descriptions
+- Forget to include error messages when debugging
+
+## Task Description Templates
+
+### For Architecture Tasks:
+```
+Design [component/system] that:
+- Requirements: [list key requirements]
+- Constraints: [list constraints]
+- Integration: [how it connects to existing systems]
+- Scale: [expected scale/usage]
+```
+
+### For Coding Tasks:
+```
+Implement [feature/function] that:
+- Purpose: [what it should do]
+- Inputs: [expected inputs]
+- Outputs: [expected outputs]
+- Edge cases: [known edge cases]
+- Context: [relevant existing code]
+```
+
+### For Review Tasks:
+```
+Review this code for:
+- [specific concerns: security, performance, style]
+- Context: [what the code does]
+- Focus areas: [priority review points]
+
+[paste code]
+```
+
+### For Reasoning Tasks:
+```
+Analyze/Explain:
+- Topic: [what to analyze]
+- Depth: [surface overview vs deep dive]
+- Format: [how to structure the response]
+- Context: [why you need this information]
+```
+
+## Quick Reference
+
+| Task Type | Primary Model | Tool Call |
+|-----------|--------------|----------|
+| Design system architecture | ChatGPT | `route_to_model(task, "openai")` |
+| Write new code | Claude | `route_to_model(task, "anthropic")` |
+| Debug errors | Claude | `route_to_model(task, "anthropic")` |
+| Explain concepts | Gemini | `route_to_model(task, "gemini")` |
+| Review code | Kimi | `route_to_model(task, "moonshot")` |
+| Complex multi-step | Auto | `orchestrate_task(task)` |
+| Analyze before starting | Auto | `analyze_task(task)` |
+
+## Example Project Workflow
+
+Building a REST API:
+
+```
+1. analyze_task("Build a REST API for user management with authentication")
+   → See the task breakdown and routing plan
+
+2. orchestrate_task("Design the architecture for a user management REST API")
+   → ChatGPT: Designs endpoints, data models, auth flow
+
+3. route_to_model("Implement the User model and database schema", "anthropic")
+   → Claude: Writes the code
+
+4. route_to_model("Implement JWT authentication middleware", "anthropic")
+   → Claude: Writes auth code
+
+5. route_to_model("Review the authentication implementation for security", "moonshot")
+   → Kimi: Reviews for vulnerabilities
+
+6. route_to_model("Explain the security implications of JWT vs sessions", "gemini")
+   → Gemini: Provides detailed analysis
+```
+
+## Error Handling
+
+If a model is unavailable, the orchestrator will:
+1. Attempt to use an alternative model
+2. Return an error with guidance on which API key is missing
+3. Suggest manual routing to an available model
+
+Use `check_status()` to see which models are currently available.

@@ -5,7 +5,7 @@
 Install AI Orchestrator with a single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-org/ai-orchestrator/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/dipcse07/ai-orchestrator/main/install.sh | bash
 ```
 
 Or if you've cloned the repository:
@@ -287,7 +287,7 @@ brew install python@3.11
 ### 2. Clone Repository
 
 ```bash
-git clone https://github.com/your-org/ai-orchestrator.git ~/ai-orchestrator
+git clone https://github.com/dipcse07/ai-orchestrator.git ~/ai-orchestrator
 cd ~/ai-orchestrator
 ```
 

@@ -491,6 +491,78 @@ install_dependencies() {
 }
 
 # ============================================================================
+# Prompt Helper Functions
+# ============================================================================
+
+# prompt_with_default: Display a prompt with default value and wait for input
+# Usage: prompt_with_default "variable_name" "Prompt text" "default_value"
+# The result is stored in the variable named by the first argument
+prompt_with_default() {
+    local var_name="$1"
+    local prompt_text="$2"
+    local default_value="$3"
+    local user_input=""
+    
+    # Display the prompt with default value in brackets
+    # Using printf for reliable output across shells
+    printf "   %s" "$prompt_text"
+    if [ -n "$default_value" ]; then
+        printf " [%s]" "$default_value"
+    fi
+    printf ": "
+    
+    # Read user input - using -r to prevent backslash interpretation
+    read -r user_input
+    
+    # Use default if input is empty
+    if [ -z "$user_input" ]; then
+        eval "$var_name=\"\$default_value\""
+    else
+        eval "$var_name=\"\$user_input\""
+    fi
+}
+
+# prompt_no_default: Display a prompt without default value
+# Usage: prompt_no_default "variable_name" "Prompt text"
+prompt_no_default() {
+    local var_name="$1"
+    local prompt_text="$2"
+    local user_input=""
+    
+    # Display the prompt
+    printf "   %s: " "$prompt_text"
+    
+    # Read user input
+    read -r user_input
+    
+    eval "$var_name=\"\$user_input\""
+}
+
+# prompt_yes_no: Display a yes/no prompt with default value
+# Usage: prompt_yes_no "variable_name" "Prompt text" "yes|no"
+prompt_yes_no() {
+    local var_name="$1"
+    local prompt_text="$2"
+    local default_value="$3"
+    local user_input=""
+    
+    # Display the prompt with (yes/no) and default
+    printf "   %s (yes/no) [%s]: " "$prompt_text" "$default_value"
+    
+    # Read user input
+    read -r user_input
+    
+    # Use default if input is empty, normalize to lowercase
+    if [ -z "$user_input" ]; then
+        eval "$var_name=\"\$default_value\""
+    else
+        # Normalize input
+        user_input=$(echo "$user_input" | tr '[:upper:]' '[:lower:]')
+        eval "$var_name=\"\$user_input\""
+    fi
+}
+
+# ============================================================================
 # Configuration Wizard
 # ============================================================================
 run_configuration_wizard() {
@@ -504,8 +576,7 @@ run_configuration_wizard() {
     
     # Installation directory
     echo -e "${EMOJI_FOLDER} ${BOLD}Installation Directory${NC}"
-    read -p "   Directory [$DEFAULT_INSTALL_DIR]: " input
-    INSTALL_DIR="${input:-$DEFAULT_INSTALL_DIR}"
+    prompt_with_default "INSTALL_DIR" "Installation directory" "$DEFAULT_INSTALL_DIR"
     
     echo ""
     
@@ -518,44 +589,32 @@ run_configuration_wizard() {
     echo -e "${DIM}   - Moonshot: https://platform.moonshot.cn/${NC}"
     echo ""
     
-    read -p "   OpenAI API Key: " OPENAI_KEY
-    read -p "   Anthropic API Key: " ANTHROPIC_KEY
-    read -p "   Google Gemini API Key: " GEMINI_KEY
-    read -p "   Moonshot API Key (optional): " MOONSHOT_KEY
+    prompt_no_default "OPENAI_KEY" "OpenAI API Key"
+    prompt_no_default "ANTHROPIC_KEY" "Anthropic API Key"
+    prompt_no_default "GEMINI_KEY" "Google Gemini API Key"
+    prompt_no_default "MOONSHOT_KEY" "Moonshot API Key (optional)"
     
     echo ""
     
     # Default Models
     echo -e "${EMOJI_GEAR} ${BOLD}Default Models${NC}"
-    read -p "   OpenAI Model [$DEFAULT_OPENAI_MODEL]: " input
-    OPENAI_MODEL="${input:-$DEFAULT_OPENAI_MODEL}"
-    
-    read -p "   Anthropic Model [$DEFAULT_ANTHROPIC_MODEL]: " input
-    ANTHROPIC_MODEL="${input:-$DEFAULT_ANTHROPIC_MODEL}"
-    
-    read -p "   Gemini Model [$DEFAULT_GEMINI_MODEL]: " input
-    GEMINI_MODEL="${input:-$DEFAULT_GEMINI_MODEL}"
-    
-    read -p "   Moonshot Model [$DEFAULT_MOONSHOT_MODEL]: " input
-    MOONSHOT_MODEL="${input:-$DEFAULT_MOONSHOT_MODEL}"
+    prompt_with_default "OPENAI_MODEL" "OpenAI Model" "$DEFAULT_OPENAI_MODEL"
+    prompt_with_default "ANTHROPIC_MODEL" "Anthropic Model" "$DEFAULT_ANTHROPIC_MODEL"
+    prompt_with_default "GEMINI_MODEL" "Gemini Model" "$DEFAULT_GEMINI_MODEL"
+    prompt_with_default "MOONSHOT_MODEL" "Moonshot Model" "$DEFAULT_MOONSHOT_MODEL"
     
     echo ""
     
     # MCP Server Configuration
     echo -e "${EMOJI_SERVER} ${BOLD}MCP Server Configuration${NC}"
-    read -p "   MCP Server Port [$DEFAULT_MCP_PORT]: " input
-    MCP_PORT="${input:-$DEFAULT_MCP_PORT}"
+    prompt_with_default "MCP_PORT" "MCP Server Port" "$DEFAULT_MCP_PORT"
     
     echo ""
     
     # Auto-start
     echo -e "${EMOJI_ROCKET} ${BOLD}Startup Options${NC}"
-    read -p "   Auto-start MCP server on login? (yes/no) [yes]: " input
-    AUTO_START="${input:-yes}"
-    
-    # iOS Development
-    read -p "   Enable iOS development tools? (yes/no) [no]: " input
-    ENABLE_IOS="${input:-no}"
+    prompt_yes_no "AUTO_START" "Auto-start MCP server on login?" "yes"
+    prompt_yes_no "ENABLE_IOS" "Enable iOS development tools?" "no"
     
     echo ""
     echo -e "${GREEN}Configuration complete!${NC}"

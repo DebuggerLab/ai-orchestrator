@@ -1,7 +1,12 @@
-"""Google Gemini client for reasoning tasks."""
+"""Google Gemini client for reasoning tasks.
+
+Migrated to google-genai SDK (replaces deprecated google-generativeai).
+See: https://github.com/googleapis/python-genai
+"""
 
 from typing import Optional, List, Dict, Any
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from .base import BaseModelClient, ModelResponse, TaskType
 
 
@@ -14,14 +19,16 @@ def list_available_gemini_models(api_key: str) -> List[Dict[str, Any]]:
     Returns:
         List of dictionaries containing model info (name, display_name, description, etc.)
     """
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     models = []
-    for model in genai.list_models():
-        if 'generateContent' in model.supported_generation_methods:
+    for model in client.models.list():
+        # Check if model supports content generation
+        supported_methods = getattr(model, 'supported_generation_methods', [])
+        if 'generateContent' in supported_methods:
             models.append({
                 'name': model.name.replace('models/', ''),  # Remove 'models/' prefix
-                'display_name': model.display_name,
-                'description': model.description,
+                'display_name': getattr(model, 'display_name', model.name),
+                'description': getattr(model, 'description', ''),
                 'input_token_limit': getattr(model, 'input_token_limit', None),
                 'output_token_limit': getattr(model, 'output_token_limit', None),
             })
@@ -38,6 +45,9 @@ class GeminiClient(BaseModelClient):
     
     Tip: You can use "gemini-flash-latest" or "gemini-pro-latest" as aliases that
     always point to the latest version of the respective model family.
+    
+    Migration Note: This client uses the new google-genai SDK (replacing deprecated
+    google-generativeai). The new SDK uses a Client-based API pattern.
     """
     
     provider_name = "Google"
@@ -45,8 +55,7 @@ class GeminiClient(BaseModelClient):
     
     def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash"):
         super().__init__(api_key, model_name)
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
+        self.client = genai.Client(api_key=api_key)
     
     async def complete(self, prompt: str, system_prompt: Optional[str] = None) -> ModelResponse:
         """Async completion - uses sync under the hood for simplicity."""
@@ -55,17 +64,20 @@ class GeminiClient(BaseModelClient):
     def complete_sync(self, prompt: str, system_prompt: Optional[str] = None) -> ModelResponse:
         """Send completion request to Google Gemini."""
         try:
-            # Combine system prompt with user prompt if provided
-            full_prompt = prompt
-            if system_prompt:
-                full_prompt = f"{system_prompt}\n\n{prompt}"
+            # Build generation config
+            config = types.GenerateContentConfig(
+                temperature=0.7,
+                max_output_tokens=4096
+            )
             
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=0.7,
-                    max_output_tokens=4096
-                )
+            # Add system instruction if provided
+            if system_prompt:
+                config.system_instruction = system_prompt
+            
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=config
             )
             
             return ModelResponse(
@@ -74,7 +86,7 @@ class GeminiClient(BaseModelClient):
                 task_type="reasoning",
                 content=response.text,
                 success=True,
-                metadata={"prompt_feedback": str(response.prompt_feedback) if hasattr(response, 'prompt_feedback') else None}
+                metadata={"prompt_feedback": str(getattr(response, 'prompt_feedback', None))}
             )
         except Exception as e:
             return ModelResponse(

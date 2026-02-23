@@ -173,23 +173,27 @@ ai-orchestrator list-models gemini
 
 ```python
 #!/usr/bin/env python3
-"""List available Gemini models for your API key."""
+"""List available Gemini models for your API key.
 
-import google.generativeai as genai
+Note: Uses google-genai SDK (replacement for deprecated google-generativeai).
+"""
+
+from google import genai
 import os
 
 # Configure with your API key
 api_key = os.getenv('GEMINI_API_KEY') or 'YOUR_API_KEY'
-genai.configure(api_key=api_key)
+client = genai.Client(api_key=api_key)
 
 print("Available Gemini Models for Text Generation:")
 print("-" * 60)
 
-for model in genai.list_models():
-    if 'generateContent' in model.supported_generation_methods:
+for model in client.models.list():
+    supported_methods = getattr(model, 'supported_generation_methods', [])
+    if 'generateContent' in supported_methods:
         name = model.name.replace('models/', '')
         print(f"\n📦 {name}")
-        print(f"   Display Name: {model.display_name}")
+        print(f"   Display Name: {getattr(model, 'display_name', name)}")
         print(f"   Input Tokens: {getattr(model, 'input_token_limit', 'N/A')}")
         print(f"   Output Tokens: {getattr(model, 'output_token_limit', 'N/A')}")
 ```

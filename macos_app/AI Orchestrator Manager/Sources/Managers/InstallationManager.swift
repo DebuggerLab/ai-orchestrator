@@ -213,7 +213,7 @@ class InstallationManager: ObservableObject {
         let requirements = """
         openai>=1.0.0
         anthropic>=0.18.0
-        google-generativeai>=0.5.0
+        google-genai>=1.0.0
         python-dotenv>=1.0.0
         rich>=13.0.0
         click>=8.0.0

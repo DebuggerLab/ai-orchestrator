@@ -49,7 +49,7 @@ BACKUP_DIR="/tmp/ai-orchestrator-backup-$(date +%Y%m%d_%H%M%S)"
 REQUIRED_PACKAGES=(
     "openai"
     "anthropic"
-    "google-generativeai"
+    "google-genai"
     "rich"
     "click"
     "pydantic"
@@ -194,8 +194,8 @@ spinner() {
 get_import_name() {
     local package="$1"
     case "$package" in
-        "google-generativeai")
-            echo "google.generativeai"
+        "google-genai")
+            echo "google.genai"
             ;;
         "python-dotenv")
             echo "dotenv"
@@ -1367,9 +1367,9 @@ except Exception as e:
     
     if [ -n "$GEMINI_KEY" ]; then
         local test_result=$("$INSTALL_DIR/venv/bin/python" -c "
-import google.generativeai as genai
+from google import genai
 try:
-    genai.configure(api_key='$GEMINI_KEY')
+    client = genai.Client(api_key='$GEMINI_KEY')
     print('OK')
 except Exception as e:
     print(f'FAILED: {e}')

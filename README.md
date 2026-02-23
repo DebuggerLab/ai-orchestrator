@@ -45,6 +45,16 @@ A powerful Python CLI tool that intelligently orchestrates multiple AI models fo
 | **Gemini** | Google | Reasoning, Logic, Analysis |
 | **Kimi** | Moonshot AI | Code Review, Quality Assurance |
 
+### 📦 SDK Migration Notice
+
+> **Important**: As of February 2026, this project uses the new `google-genai` SDK (replacing the deprecated `google-generativeai` package). The deprecated SDK's support terminated on November 30, 2025.
+> 
+> - **Package change**: `google-generativeai` → `google-genai`
+> - **Import change**: `import google.generativeai as genai` → `from google import genai`
+> - **API change**: Uses client-based pattern: `client = genai.Client(api_key=...)`
+> 
+> See [google-genai documentation](https://github.com/googleapis/python-genai) for more details.
+
 ---
 
 ## 🚀 Quick Start

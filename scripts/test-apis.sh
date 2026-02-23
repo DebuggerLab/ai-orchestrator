@@ -104,7 +104,7 @@ echo ""
 
 test_package "openai" "openai"
 test_package "anthropic" "anthropic"
-test_package "google-generativeai" "google.generativeai"
+test_package "google-genai" "google.genai"
 test_package "rich" "rich"
 test_package "click" "click"
 test_package "pydantic" "pydantic"
@@ -139,10 +139,10 @@ client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
 
 # Gemini Test
 test_api "Gemini" "GEMINI_API_KEY" "
-import google.generativeai as genai
+from google import genai
 import os
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-models = genai.list_models()
+client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
+models = client.models.list()
 # Verify we can list models
 "
 

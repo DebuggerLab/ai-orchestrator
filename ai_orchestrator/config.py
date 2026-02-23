@@ -8,10 +8,17 @@ from dotenv import load_dotenv
 
 
 class ModelConfig(BaseModel):
-    """Configuration for individual AI models."""
-    openai_model: str = Field(default="gpt-4")
-    anthropic_model: str = Field(default="claude-3-opus-20240229")
-    gemini_model: str = Field(default="gemini-pro")
+    """Configuration for individual AI models.
+    
+    Default models are chosen for accessibility and cost-effectiveness:
+    - gpt-4o-mini: Fast, affordable, widely accessible OpenAI model
+    - claude-3-5-sonnet: Best balance of capability and availability
+    - gemini-1.5-flash: Fast and accessible Google model
+    - moonshot-v1-8k: Standard Moonshot model
+    """
+    openai_model: str = Field(default="gpt-4o-mini")
+    anthropic_model: str = Field(default="claude-3-5-sonnet-20241022")
+    gemini_model: str = Field(default="gemini-1.5-flash")
     moonshot_model: str = Field(default="moonshot-v1-8k")
 
 
@@ -39,10 +46,10 @@ class Config(BaseModel):
             gemini_api_key=os.getenv("GEMINI_API_KEY"),
             moonshot_api_key=os.getenv("MOONSHOT_API_KEY"),
             models=ModelConfig(
-                openai_model=os.getenv("DEFAULT_ARCHITECTURE_MODEL", "gpt-4"),
-                anthropic_model=os.getenv("DEFAULT_CODING_MODEL", "claude-3-opus-20240229"),
-                gemini_model=os.getenv("DEFAULT_REASONING_MODEL", "gemini-pro"),
-                moonshot_model=os.getenv("DEFAULT_REVIEW_MODEL", "moonshot-v1-8k"),
+                openai_model=os.getenv("OPENAI_MODEL", os.getenv("DEFAULT_ARCHITECTURE_MODEL", "gpt-4o-mini")),
+                anthropic_model=os.getenv("ANTHROPIC_MODEL", os.getenv("DEFAULT_CODING_MODEL", "claude-3-5-sonnet-20241022")),
+                gemini_model=os.getenv("GEMINI_MODEL", os.getenv("DEFAULT_REASONING_MODEL", "gemini-1.5-flash")),
+                moonshot_model=os.getenv("MOONSHOT_MODEL", os.getenv("DEFAULT_REVIEW_MODEL", "moonshot-v1-8k")),
             )
         )
     

@@ -240,11 +240,13 @@ Add to `.vscode/tasks.json`:
 
 ```env
 # Override default model names
-DEFAULT_ARCHITECTURE_MODEL=gpt-4-turbo
-DEFAULT_CODING_MODEL=claude-3-5-sonnet-20241022
-DEFAULT_REASONING_MODEL=gemini-1.5-pro
-DEFAULT_REVIEW_MODEL=moonshot-v1-32k
+OPENAI_MODEL=gpt-4o
+ANTHROPIC_MODEL=claude-3-opus-20240229
+GEMINI_MODEL=gemini-1.5-pro
+MOONSHOT_MODEL=moonshot-v1-32k
 ```
+
+> 📖 See [MODELS.md](MODELS.md) for a complete list of available models, pricing, and access requirements.
 
 ### Programmatic Usage
 
@@ -266,6 +268,59 @@ print(result.consolidated_output)
 for subtask, response in result.subtask_results:
     print(f"{subtask.target_model}: {response.content[:100]}...")
 ```
+
+## ❓ Troubleshooting
+
+### Model Access Errors (404 Not Found)
+
+If you see errors like `404: Model 'gpt-4' not found` or `404: Model 'gemini-pro' not found`, this means the model names are outdated.
+
+**Solution:**
+
+1. Update to the latest version of AI Orchestrator
+2. Or manually update your `.env` file with current model names:
+
+```env
+# Use these current model names
+OPENAI_MODEL=gpt-4o-mini
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+GEMINI_MODEL=gemini-1.5-flash
+MOONSHOT_MODEL=moonshot-v1-8k
+```
+
+### Common Model Errors
+
+| Error | Provider | Solution |
+|-------|----------|----------|
+| `404 model not found` | OpenAI | Use `gpt-4o-mini` instead of `gpt-4` |
+| `404 model not found` | Gemini | Use `gemini-1.5-flash` instead of `gemini-pro` |
+| `invalid_api_key` | Any | Regenerate API key in provider console |
+| `insufficient_quota` | OpenAI | Add billing to your OpenAI account |
+| `rate_limit_exceeded` | Any | Wait and retry, or upgrade API tier |
+
+### API Key Issues
+
+If models aren't being detected:
+
+1. **Check your `.env` file exists** in the project directory
+2. **Verify API key format**:
+   - OpenAI: Starts with `sk-`
+   - Anthropic: Starts with `sk-ant-`
+   - Gemini: Alphanumeric string
+   - Moonshot: Check provider documentation
+
+3. **Run status check**:
+```bash
+ai-orchestrator status
+```
+
+### Getting Help
+
+- 📖 See [MODELS.md](MODELS.md) for detailed model information
+- 🐛 Report issues on GitHub
+- 💬 Check provider documentation for API-specific issues
+
+---
 
 ## 🛠️ Development
 

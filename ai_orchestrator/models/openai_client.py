@@ -11,7 +11,7 @@ class OpenAIClient(BaseModelClient):
     provider_name = "OpenAI"
     specialties = [TaskType.ARCHITECTURE, TaskType.ROADMAP, TaskType.DOCUMENTATION, TaskType.GENERAL]
     
-    def __init__(self, api_key: str, model_name: str = "gpt-4"):
+    def __init__(self, api_key: str, model_name: str = "gpt-4o-mini"):
         super().__init__(api_key, model_name)
         self.client = OpenAI(api_key=api_key)
     

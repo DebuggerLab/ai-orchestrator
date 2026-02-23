@@ -8,7 +8,7 @@ This document provides detailed information about available models for each AI p
 |----------|--------------|-----------------|--------------|
 | OpenAI | `gpt-4o-mini` | Architecture, Planning | Standard API |
 | Anthropic | `claude-3-5-sonnet-20241022` | Coding, Implementation | Standard API |
-| Google | `gemini-2.0-flash` | Reasoning, Analysis | Standard API |
+| Google | `gemini-1.5-pro` | Reasoning, Analysis | Standard API |
 | Moonshot | `moonshot-v1-8k` | Code Review | Standard API |
 
 ---
@@ -99,27 +99,38 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
 ## 💎 Google Gemini Models
 
+### ⚠️ Important: Model Availability Varies
+
+**Google Gemini model availability varies by region, account type, and API version.** Some models (like `gemini-2.0-flash`) may not be available to new users or in certain regions.
+
+**Always check available models for your API key before configuring:**
+
+```bash
+# Using AI Orchestrator CLI
+ai-orchestrator list-models gemini
+```
+
 ### Available Models
 
 | Model | Context Window | Speed | Cost | Access |
 |-------|---------------|-------|------|--------|
-| `gemini-2.0-flash` ⭐ | 1M | Very Fast | $ | Standard |
-| `gemini-2.5-flash` | 1M | Very Fast | $ | Standard |
-| `gemini-1.5-pro-002` | 2M | Medium | $$ | Standard |
+| `gemini-1.5-pro` ⭐ | 2M | Medium | $$ | Widely Available |
+| `gemini-1.5-flash` | 1M | Fast | $ | Widely Available |
+| `gemini-1.0-pro` | 32K | Fast | $ | Widely Available |
 
-⭐ = Default/Recommended
+⭐ = Default/Recommended (most stable and widely available)
 
 ### Model Selection Guide
 
-- **`gemini-2.0-flash`** (Default): Current stable fast model. Best for most reasoning tasks.
-- **`gemini-2.5-flash`**: Latest flash model with improved capabilities.
-- **`gemini-1.5-pro-002`**: Largest context window. Use for complex analysis requiring lots of context.
+- **`gemini-1.5-pro`** (Default): Most stable, widely available. Best for complex reasoning tasks.
+- **`gemini-1.5-flash`**: Faster and cheaper. Good for simpler reasoning tasks.
+- **`gemini-1.0-pro`**: Legacy model, but very stable. Good fallback option.
 
 ### Configuration
 
 ```env
 # In your .env file
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-1.5-pro
 ```
 
 ### Access Requirements
@@ -128,37 +139,75 @@ GEMINI_MODEL=gemini-2.0-flash
 - Get key from: https://aistudio.google.com/apikey
 - Free tier available with rate limits
 
+### 🔍 How to Check Available Models
+
+Model availability varies by region and account. Use these methods to see what's available:
+
+#### Method 1: AI Orchestrator CLI (Recommended)
+
+```bash
+ai-orchestrator list-models gemini
+```
+
+#### Method 2: Python Script
+
+```python
+#!/usr/bin/env python3
+"""List available Gemini models for your API key."""
+
+import google.generativeai as genai
+import os
+
+# Configure with your API key
+api_key = os.getenv('GEMINI_API_KEY') or 'YOUR_API_KEY'
+genai.configure(api_key=api_key)
+
+print("Available Gemini Models for Text Generation:")
+print("-" * 60)
+
+for model in genai.list_models():
+    if 'generateContent' in model.supported_generation_methods:
+        name = model.name.replace('models/', '')
+        print(f"\n📦 {name}")
+        print(f"   Display Name: {model.display_name}")
+        print(f"   Input Tokens: {getattr(model, 'input_token_limit', 'N/A')}")
+        print(f"   Output Tokens: {getattr(model, 'output_token_limit', 'N/A')}")
+```
+
+#### Method 3: Using the Helper Function
+
+```python
+from ai_orchestrator.models.gemini_client import list_available_gemini_models
+
+# List all available models
+models = list_available_gemini_models('YOUR_API_KEY')
+for m in models:
+    print(f"{m['name']}: {m['description'][:50]}...")
+```
+
 ### Common Errors
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `404 model not found` | Old/deprecated model name | Use `gemini-2.0-flash` instead |
+| `404 model not found` | Model not available for your account | Run `ai-orchestrator list-models gemini` to see available models |
 | `API_KEY_INVALID` | Wrong key type | Use AI Studio key, not GCP key |
 | `RESOURCE_EXHAUSTED` | Rate limit hit | Wait or upgrade to paid tier |
+| `not available to new users` | Model restricted | Use `gemini-1.5-pro` instead |
 
-### ⚠️ Deprecated Models (Will Return 404 Errors)
+### ⚠️ Models with Limited Availability
 
-The following models have been deprecated and will return 404 errors:
-- `gemini-pro` → Use `gemini-2.0-flash` instead
-- `gemini-pro-vision` → Use `gemini-2.0-flash` instead
-- `gemini-1.5-flash` (deprecated Sep 24, 2025) → Use `gemini-2.0-flash` instead
-- `gemini-1.5-pro` (deprecated Sep 24, 2025) → Use `gemini-1.5-pro-002` instead
+Some newer models may not be available in all regions or to all accounts:
+- `gemini-2.0-flash` - May not be available to new users
+- `gemini-2.5-*` - Limited availability
+
+**If you encounter availability issues, use `gemini-1.5-pro` which is widely available.**
 
 ### 💡 Model Name Format
 
 Google Gemini models use simple names without prefixes:
-- ✅ Correct: `gemini-2.0-flash`
-- ❌ Wrong: `models/gemini-2.0-flash` (don't include the "models/" prefix)
-- ❌ Wrong: `gemini/gemini-2.0-flash` (don't include redundant prefixes)
-
-To list available models programmatically:
-```python
-import google.generativeai as genai
-genai.configure(api_key='YOUR_API_KEY')
-for m in genai.list_models():
-    if 'generateContent' in m.supported_generation_methods:
-        print(m.name)
-```
+- ✅ Correct: `gemini-1.5-pro`
+- ❌ Wrong: `models/gemini-1.5-pro` (don't include the "models/" prefix)
+- ❌ Wrong: `gemini/gemini-1.5-pro` (don't include redundant prefixes)
 
 ---
 
@@ -240,8 +289,8 @@ config.models.gemini_model = "gemini-2.0-flash"
 
 | Tier | Models | Typical Use Case |
 |------|--------|------------------|
-| $ (Low) | gpt-4o-mini, claude-3-5-haiku, gemini-2.0-flash | Development, testing |
-| $$ (Medium) | claude-3-5-sonnet, gemini-1.5-pro-002 | Production workloads |
+| $ (Low) | gpt-4o-mini, claude-3-5-haiku, gemini-1.5-flash | Development, testing |
+| $$ (Medium) | claude-3-5-sonnet, gemini-1.5-pro | Production workloads |
 | $$$ (High) | gpt-4o, gpt-4-turbo | High-value tasks |
 | $$$$ (Premium) | claude-3-opus | Critical implementations |
 
@@ -258,37 +307,42 @@ config.models.gemini_model = "gemini-2.0-flash"
 
 ### "404 Model Not Found"
 
-This usually means the model name is incorrect or deprecated.
+This usually means the model name is incorrect or not available for your account.
 
 **Common causes:**
-- Using old model names (e.g., `gpt-4`, `gemini-pro`, `gemini-1.5-flash`)
+- Using model names not available in your region (e.g., `gemini-2.0-flash` may not be available to new users)
 - Typos in model name
 - Model was sunset by provider
-- Using wrong model name format (e.g., `models/gemini-2.0-flash` instead of `gemini-2.0-flash`)
+- Using wrong model name format (e.g., `models/gemini-1.5-pro` instead of `gemini-1.5-pro`)
 
 **Solution:**
-1. Check the exact model name in this document
-2. Update your `.env` file with the correct name
-3. Restart your application
+1. Run `ai-orchestrator list-models gemini` to see available models
+2. Check the exact model name in this document
+3. Update your `.env` file with an available model
+4. Restart your application
 
 ### Gemini-Specific 404 Errors
 
 If you see an error like:
 ```
-404 models/gemini-1.5-flash is not found for API version v1beta
+404 models/gemini-2.0-flash is not found
+```
+or:
+```
+gemini-2.0-flash is not available to new users
 ```
 
-This means the model is deprecated. **Update to `gemini-2.0-flash`:**
+This means the model is not available for your account. **Use `gemini-1.5-pro` instead:**
 
 ```env
 # In your .env file
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-1.5-pro
 ```
 
-**Deprecated Gemini models (as of Sep 2025):**
-- `gemini-pro` → use `gemini-2.0-flash`
-- `gemini-1.5-flash` → use `gemini-2.0-flash`
-- `gemini-1.5-pro` → use `gemini-1.5-pro-002`
+**Always check available models first:**
+```bash
+ai-orchestrator list-models gemini
+```
 
 ### "Access Denied" / "Insufficient Permissions"
 
@@ -315,6 +369,7 @@ GEMINI_MODEL=gemini-2.0-flash
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.2.0 | Feb 2026 | Changed Gemini default to gemini-1.5-pro (most stable/available). Added list-models command. |
 | 2.1.0 | Feb 2026 | Updated Gemini default to gemini-2.0-flash (gemini-1.5-flash deprecated) |
 | 2.0.0 | Feb 2026 | Updated defaults: gpt-4o-mini, gemini-1.5-flash |
 | 1.0.0 | Initial | Original defaults: gpt-4, gemini-pro (now deprecated) |

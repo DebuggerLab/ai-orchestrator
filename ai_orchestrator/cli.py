@@ -220,5 +220,73 @@ def analyze(text: tuple):
     console.print(table)
 
 
+@main.command("list-models")
+@click.argument("provider", type=click.Choice(["gemini", "all"]), default="gemini")
+@click.option("--env", "-e", type=click.Path(exists=True), help="Path to .env file")
+def list_models(provider: str, env: Optional[str]):
+    """List available models for a provider.
+    
+    Currently supports listing Gemini models dynamically from the API.
+    This is useful to check which models are available for your API key,
+    as model availability varies by region and account type.
+    
+    Examples:
+    
+    \b
+    ai-orchestrator list-models gemini
+    ai-orchestrator list-models all
+    """
+    print_banner()
+    
+    env_path = Path(env) if env else None
+    config = Config.load(env_path)
+    
+    if provider in ["gemini", "all"]:
+        if not config.gemini_api_key:
+            console.print("[bold red]Error:[/bold red] GEMINI_API_KEY not configured.")
+            console.print("Please add your Gemini API key to .env file.")
+            sys.exit(1)
+        
+        console.print("[bold cyan]Fetching available Gemini models...[/bold cyan]\n")
+        
+        try:
+            from .models.gemini_client import list_available_gemini_models
+            
+            models = list_available_gemini_models(config.gemini_api_key)
+            
+            if not models:
+                console.print("[yellow]No text generation models found.[/yellow]")
+                return
+            
+            table = Table(title="Available Gemini Models", border_style="cyan")
+            table.add_column("Model Name", style="green")
+            table.add_column("Display Name", style="white")
+            table.add_column("Input Tokens", style="cyan", justify="right")
+            table.add_column("Output Tokens", style="cyan", justify="right")
+            
+            for model in models:
+                input_tokens = str(model.get('input_token_limit', 'N/A'))
+                output_tokens = str(model.get('output_token_limit', 'N/A'))
+                table.add_row(
+                    model['name'],
+                    model.get('display_name', 'N/A'),
+                    input_tokens,
+                    output_tokens
+                )
+            
+            console.print(table)
+            console.print(f"\n[green]✓ Found {len(models)} model(s) available for your API key[/green]")
+            console.print(f"\n[dim]Current configured model: {config.models.gemini_model}[/dim]")
+            console.print("\n[bold]To use a different model:[/bold]")
+            console.print("  Add to your .env file: GEMINI_MODEL=<model-name>")
+            
+        except Exception as e:
+            console.print(f"[bold red]Error fetching models:[/bold red] {e}")
+            console.print("\nTips:")
+            console.print("  • Verify your GEMINI_API_KEY is valid")
+            console.print("  • Get a key from: https://aistudio.google.com/apikey")
+            sys.exit(1)
+
+
 if __name__ == "__main__":
     main()

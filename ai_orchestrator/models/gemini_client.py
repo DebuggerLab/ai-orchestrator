@@ -1,17 +1,46 @@
 """Google Gemini client for reasoning tasks."""
 
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import google.generativeai as genai
 from .base import BaseModelClient, ModelResponse, TaskType
 
 
+def list_available_gemini_models(api_key: str) -> List[Dict[str, Any]]:
+    """List all available Gemini models for the given API key.
+    
+    Args:
+        api_key: Google AI API key
+        
+    Returns:
+        List of dictionaries containing model info (name, display_name, description, etc.)
+    """
+    genai.configure(api_key=api_key)
+    models = []
+    for model in genai.list_models():
+        if 'generateContent' in model.supported_generation_methods:
+            models.append({
+                'name': model.name.replace('models/', ''),  # Remove 'models/' prefix
+                'display_name': model.display_name,
+                'description': model.description,
+                'input_token_limit': getattr(model, 'input_token_limit', None),
+                'output_token_limit': getattr(model, 'output_token_limit', None),
+            })
+    return models
+
+
 class GeminiClient(BaseModelClient):
-    """Google Gemini client specialized in reasoning and logic."""
+    """Google Gemini client specialized in reasoning and logic.
+    
+    Default model: gemini-1.5-pro (most stable and widely available)
+    
+    Note: Model availability varies by region and account type. 
+    Use list_available_gemini_models() to check available models for your API key.
+    """
     
     provider_name = "Google"
     specialties = [TaskType.REASONING, TaskType.LOGIC, TaskType.GENERAL]
     
-    def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash"):
+    def __init__(self, api_key: str, model_name: str = "gemini-1.5-pro"):
         super().__init__(api_key, model_name)
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)

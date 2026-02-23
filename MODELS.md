@@ -8,7 +8,7 @@ This document provides detailed information about available models for each AI p
 |----------|--------------|-----------------|--------------|
 | OpenAI | `gpt-4o-mini` | Architecture, Planning | Standard API |
 | Anthropic | `claude-3-5-sonnet-20241022` | Coding, Implementation | Standard API |
-| Google | `gemini-1.5-pro` | Reasoning, Analysis | Standard API |
+| Google | `gemini-2.5-flash` | Reasoning, Analysis | Standard API |
 | Moonshot | `moonshot-v1-8k` | Code Review | Standard API |
 
 ---
@@ -101,7 +101,7 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
 ### ⚠️ Important: Model Availability Varies
 
-**Google Gemini model availability varies by region, account type, and API version.** Some models (like `gemini-2.0-flash`) may not be available to new users or in certain regions.
+**Google Gemini model availability varies by region, account type, and API version.**
 
 **Always check available models for your API key before configuring:**
 
@@ -114,23 +114,43 @@ ai-orchestrator list-models gemini
 
 | Model | Context Window | Speed | Cost | Access |
 |-------|---------------|-------|------|--------|
-| `gemini-1.5-pro` ⭐ | 2M | Medium | $$ | Widely Available |
-| `gemini-1.5-flash` | 1M | Fast | $ | Widely Available |
-| `gemini-1.0-pro` | 32K | Fast | $ | Widely Available |
+| `gemini-2.5-flash` ⭐ | 1M | Fast | $ | Standard |
+| `gemini-2.5-pro` | 1M | Medium | $$$ | Standard |
+| `gemini-flash-latest` | 1M | Fast | $ | Standard (alias) |
+| `gemini-pro-latest` | 1M | Medium | $$$ | Standard (alias) |
+| `gemini-1.5-pro` | 2M | Medium | $$ | Standard (legacy) |
+| `gemini-1.5-flash` | 1M | Fast | $ | Standard (legacy) |
 
-⭐ = Default/Recommended (most stable and widely available)
+⭐ = Default/Recommended
 
 ### Model Selection Guide
 
-- **`gemini-1.5-pro`** (Default): Most stable, widely available. Best for complex reasoning tasks.
-- **`gemini-1.5-flash`**: Faster and cheaper. Good for simpler reasoning tasks.
-- **`gemini-1.0-pro`**: Legacy model, but very stable. Good fallback option.
+- **`gemini-2.5-flash`** (Default): Latest stable flash model. Fast, capable, and cost-effective. Recommended for most users.
+- **`gemini-flash-latest`**: Alias that always points to the latest flash model. Great for staying up-to-date automatically.
+- **`gemini-2.5-pro`**: Premium model with highest capability. Use for complex reasoning requiring maximum quality.
+- **`gemini-pro-latest`**: Alias that always points to the latest pro model.
+- **`gemini-1.5-pro`**: Legacy model, still available with 2M context window.
+- **`gemini-1.5-flash`**: Legacy flash model, still available.
+
+### 💡 Using Model Aliases
+
+You can use `-latest` aliases to always use the newest version:
+
+```env
+# Always use the latest flash model (currently gemini-2.5-flash)
+GEMINI_MODEL=gemini-flash-latest
+
+# Always use the latest pro model (currently gemini-2.5-pro)
+GEMINI_MODEL=gemini-pro-latest
+```
+
+This ensures you automatically get the latest improvements without updating your configuration.
 
 ### Configuration
 
 ```env
 # In your .env file
-GEMINI_MODEL=gemini-1.5-pro
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### Access Requirements
@@ -194,13 +214,13 @@ for m in models:
 | `RESOURCE_EXHAUSTED` | Rate limit hit | Wait or upgrade to paid tier |
 | `not available to new users` | Model restricted | Use `gemini-1.5-pro` instead |
 
-### ⚠️ Models with Limited Availability
+### ⚠️ Legacy Model Notes
 
-Some newer models may not be available in all regions or to all accounts:
-- `gemini-2.0-flash` - May not be available to new users
-- `gemini-2.5-*` - Limited availability
+Some older models may be deprecated or have limited availability:
+- `gemini-2.0-flash` - Deprecated, use `gemini-2.5-flash` instead
+- `gemini-1.0-pro` - Legacy model, consider upgrading to 2.5 series
 
-**If you encounter availability issues, use `gemini-1.5-pro` which is widely available.**
+**If you encounter availability issues, run `ai-orchestrator list-models gemini` to see what's available for your API key.**
 
 ### 💡 Model Name Format
 
@@ -257,8 +277,10 @@ OPENAI_MODEL=gpt-4o
 # Change Anthropic model
 ANTHROPIC_MODEL=claude-3-opus-20240229
 
-# Change Gemini model
-GEMINI_MODEL=gemini-2.5-flash
+# Change Gemini model (recommended options)
+GEMINI_MODEL=gemini-2.5-flash        # Latest stable (default)
+# GEMINI_MODEL=gemini-flash-latest   # Always latest flash version
+# GEMINI_MODEL=gemini-2.5-pro        # Premium model
 
 # Change Moonshot model
 MOONSHOT_MODEL=moonshot-v1-32k
@@ -268,7 +290,9 @@ MOONSHOT_MODEL=moonshot-v1-32k
 
 ```bash
 export OPENAI_MODEL=gpt-4o
-export GEMINI_MODEL=gemini-2.0-flash
+export GEMINI_MODEL=gemini-2.5-flash
+# Or use the alias for always-latest:
+export GEMINI_MODEL=gemini-flash-latest
 ```
 
 ### Method 3: Programmatic
@@ -278,7 +302,7 @@ from ai_orchestrator.config import Config, ModelConfig
 
 config = Config.load()
 config.models.openai_model = "gpt-4o"
-config.models.gemini_model = "gemini-2.0-flash"
+config.models.gemini_model = "gemini-2.5-flash"
 ```
 
 ---
@@ -289,9 +313,9 @@ config.models.gemini_model = "gemini-2.0-flash"
 
 | Tier | Models | Typical Use Case |
 |------|--------|------------------|
-| $ (Low) | gpt-4o-mini, claude-3-5-haiku, gemini-1.5-flash | Development, testing |
+| $ (Low) | gpt-4o-mini, claude-3-5-haiku, gemini-2.5-flash | Development, testing |
 | $$ (Medium) | claude-3-5-sonnet, gemini-1.5-pro | Production workloads |
-| $$$ (High) | gpt-4o, gpt-4-turbo | High-value tasks |
+| $$$ (High) | gpt-4o, gpt-4-turbo, gemini-2.5-pro | High-value tasks |
 | $$$$ (Premium) | claude-3-opus | Critical implementations |
 
 ### Cost Optimization Tips
@@ -329,14 +353,16 @@ If you see an error like:
 ```
 or:
 ```
-gemini-2.0-flash is not available to new users
+Model not available for your account
 ```
 
-This means the model is not available for your account. **Use `gemini-1.5-pro` instead:**
+This means the model is not available for your account. **Use `gemini-2.5-flash` (the new default) or try `gemini-flash-latest`:**
 
 ```env
-# In your .env file
-GEMINI_MODEL=gemini-1.5-pro
+# In your .env file - try one of these:
+GEMINI_MODEL=gemini-2.5-flash       # Latest stable
+GEMINI_MODEL=gemini-flash-latest    # Always latest flash
+GEMINI_MODEL=gemini-1.5-pro         # Fallback if 2.5 unavailable
 ```
 
 **Always check available models first:**
@@ -369,6 +395,7 @@ ai-orchestrator list-models gemini
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.3.0 | Feb 2026 | Changed Gemini default to gemini-2.5-flash (latest stable). Added support for -latest aliases. |
 | 2.2.0 | Feb 2026 | Changed Gemini default to gemini-1.5-pro (most stable/available). Added list-models command. |
 | 2.1.0 | Feb 2026 | Updated Gemini default to gemini-2.0-flash (gemini-1.5-flash deprecated) |
 | 2.0.0 | Feb 2026 | Updated defaults: gpt-4o-mini, gemini-1.5-flash |

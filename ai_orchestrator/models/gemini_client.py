@@ -31,16 +31,19 @@ def list_available_gemini_models(api_key: str) -> List[Dict[str, Any]]:
 class GeminiClient(BaseModelClient):
     """Google Gemini client specialized in reasoning and logic.
     
-    Default model: gemini-1.5-pro (most stable and widely available)
+    Default model: gemini-2.5-flash (latest stable flash model)
     
     Note: Model availability varies by region and account type. 
     Use list_available_gemini_models() to check available models for your API key.
+    
+    Tip: You can use "gemini-flash-latest" or "gemini-pro-latest" as aliases that
+    always point to the latest version of the respective model family.
     """
     
     provider_name = "Google"
     specialties = [TaskType.REASONING, TaskType.LOGIC, TaskType.GENERAL]
     
-    def __init__(self, api_key: str, model_name: str = "gemini-1.5-pro"):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash"):
         super().__init__(api_key, model_name)
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model_name)

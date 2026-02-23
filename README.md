@@ -242,7 +242,9 @@ Add to `.vscode/tasks.json`:
 # Override default model names
 OPENAI_MODEL=gpt-4o
 ANTHROPIC_MODEL=claude-3-opus-20240229
-GEMINI_MODEL=gemini-1.5-pro
+GEMINI_MODEL=gemini-2.5-flash          # Latest stable (default)
+# GEMINI_MODEL=gemini-flash-latest     # Always use latest flash version
+# GEMINI_MODEL=gemini-2.5-pro          # Premium model
 MOONSHOT_MODEL=moonshot-v1-32k
 ```
 
@@ -257,7 +259,7 @@ Google Gemini model availability varies by region and account type. To see which
 ai-orchestrator list-models gemini
 ```
 
-> ⚠️ **Note**: Some models (like `gemini-2.0-flash`) may not be available to new users. If you encounter a "model not found" error, run the command above to see available models and update your `.env` file accordingly.
+> 💡 **Tip**: The default model is `gemini-2.5-flash`. You can also use `gemini-flash-latest` to always use the latest flash version automatically.
 
 ### Programmatic Usage
 
@@ -295,17 +297,19 @@ If you see errors like `404: Model 'gpt-4' not found` or `404: Model 'gemini-pro
 # Use these current model names
 OPENAI_MODEL=gpt-4o-mini
 ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
-GEMINI_MODEL=gemini-1.5-pro
+GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 ```
+
+> 💡 **Tip**: Use `gemini-flash-latest` or `gemini-pro-latest` as aliases that always point to the latest version of the respective model family.
 
 ### Common Model Errors
 
 | Error | Provider | Solution |
 |-------|----------|----------|
 | `404 model not found` | OpenAI | Use `gpt-4o-mini` instead of `gpt-4` |
-| `404 model not found` | Gemini | Run `ai-orchestrator list-models gemini` to see available models. Use `gemini-1.5-pro` (most stable). |
-| `not available to new users` | Gemini | Use `gemini-1.5-pro` instead of `gemini-2.0-flash` |
+| `404 model not found` | Gemini | Run `ai-orchestrator list-models gemini` to see available models. Use `gemini-2.5-flash` (default). |
+| `not available to new users` | Gemini | Use `gemini-2.5-flash` or `gemini-flash-latest` |
 | `invalid_api_key` | Any | Regenerate API key in provider console |
 | `insufficient_quota` | OpenAI | Add billing to your OpenAI account |
 | `rate_limit_exceeded` | Any | Wait and retry, or upgrade API tier |

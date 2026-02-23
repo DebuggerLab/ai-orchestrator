@@ -2,6 +2,27 @@
 
 A powerful Python CLI tool that intelligently orchestrates multiple AI models for automatic task distribution. Route your tasks to the most suitable AI model based on task type.
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+---
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [IDE Integration Overview](#-ide-integration-overview)
+- [Cursor IDE Setup](#-cursor-ide-setup)
+- [Xcode Extension Setup](#-xcode-extension-setup)
+- [Configuration](#️-configuration)
+- [Usage](#-usage)
+- [Complete Development Cycle](#-complete-development-cycle)
+- [How It Works](#-how-it-works)
+- [Troubleshooting](#-troubleshooting)
+- [Development](#️-development)
+
+---
+
 ## 🎯 Features
 
 - **Multi-Model Integration**: Seamlessly connects to OpenAI, Anthropic, Google Gemini, and Moonshot AI
@@ -13,57 +34,9 @@ A powerful Python CLI tool that intelligently orchestrates multiple AI models fo
 - **Verification Loop**: Iterative run → test → fix cycle until all tests pass
 - **Beautiful CLI Output**: Rich formatting with progress indicators and colored output
 - **Error Handling**: Graceful fallback when models are unavailable
-- **Cursor IDE Ready**: Designed to work perfectly from Cursor's integrated terminal
+- **IDE Integration**: Works with Cursor IDE (MCP) and Xcode Extension
 
-## 🔄 Complete Development Cycle
-
-The AI Orchestrator supports a full development workflow:
-
-```
-PLAN → CODE → RUN → TEST → FIX → VERIFY → REVIEW → DONE
-```
-
-### Quick Start for Full Project Development
-
-```bash
-# In Cursor IDE with MCP:
-
-# 1. Design & Implement
-@ai-orchestrator orchestrate_task("Build a REST API for user management with JWT auth")
-
-# 2. Run project and auto-fix any issues
-@ai-orchestrator verify_project("/path/to/project")
-
-# 3. Review the final code
-@ai-orchestrator orchestrate_task("Review the implementation for security")
-```
-
-### What the Verification Loop Does
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    VERIFICATION LOOP                         │
-├─────────────────────────────────────────────────────────────┤
-│  Cycle 1: RUN → 5 errors → FIX 3 → Progress: 40%           │
-│  Cycle 2: RUN → 2 errors → FIX 1 → Progress: 80%           │
-│  Cycle 3: RUN → 1 error  → FIX 1 → Progress: 100% ✅        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### New Execution & Auto-Fix Tools
-
-| Tool | Purpose | Example |
-|------|---------|---------|
-| `run_project` | Execute any project | `run_project("/path")` |
-| `test_project` | Run test suite | `test_project("/path")` |
-| `analyze_errors` | Deep error analysis | `analyze_errors("/path")` |
-| `fix_issues` | AI-powered auto-fix | `fix_issues("/path")` |
-| `verify_project` | Full fix loop | `verify_project("/path")` |
-| `orchestrate_full_development` | Complete workflow | `orchestrate_full_development("desc", "/path")` |
-
-📚 **See [WORKFLOWS.md](WORKFLOWS.md) for visual workflow diagrams and decision trees.**
-
-## 🏗️ Model Specializations
+### 🏗️ Model Specializations
 
 | Model | Provider | Specialization |
 |-------|----------|----------------|
@@ -72,27 +45,482 @@ PLAN → CODE → RUN → TEST → FIX → VERIFY → REVIEW → DONE
 | **Gemini** | Google | Reasoning, Logic, Analysis |
 | **Kimi** | Moonshot AI | Code Review, Quality Assurance |
 
-## 📦 Installation
+---
 
-### Quick Install
+## 🚀 Quick Start
+
+Get up and running in under a minute with one command!
+
+### One-Command Installation
+
+```bash
+# Clone and install everything automatically
+git clone https://github.com/your-org/ai_orchestrator.git && cd ai_orchestrator && ./install.sh
+```
+
+Or if you already have the repository:
 
 ```bash
 cd ai_orchestrator
-pip install -e .
+./install.sh
 ```
 
-### Manual Install
+### What Happens During Installation
+
+The `install.sh` script automatically:
+
+1. ✅ **Checks Prerequisites** - Verifies Python 3.10+ and pip are installed
+2. ✅ **Creates Virtual Environment** - Sets up isolated Python environment
+3. ✅ **Installs Dependencies** - Installs all required Python packages
+4. ✅ **Installs CLI Tool** - Makes `ai-orchestrator` command available globally
+5. ✅ **Creates Config Template** - Copies `.env.example` to `.env`
+6. ✅ **Sets Up MCP Server** - Prepares Cursor IDE integration
+7. ✅ **Configures Cursor** - Auto-configures Cursor settings (if Cursor is installed)
+8. ✅ **Verifies Installation** - Runs health check to confirm everything works
+
+### Next Steps After Installation
 
 ```bash
+# 1. Add your API keys
+nano .env   # or use your preferred editor
+
+# 2. Verify everything is working
+ai-orchestrator status
+
+# 3. Run your first task
+ai-orchestrator run "Design a REST API for a todo application"
+```
+
+> 📖 **Detailed installation guide:** See [README_INSTALL.md](README_INSTALL.md) for manual installation and advanced options.
+
+---
+
+## 🎯 IDE Integration Overview
+
+AI Orchestrator integrates with two major IDEs, each with different capabilities:
+
+### Feature Comparison
+
+| Feature | Cursor IDE (MCP) | Xcode Extension |
+|---------|------------------|-----------------|
+| **Setup Complexity** | Easy (auto-config) | Medium (manual enable) |
+| **Task Routing** | ✅ Full support | ✅ Full support |
+| **Code Generation** | ✅ In-editor | ✅ In-editor |
+| **Project Execution** | ✅ Full workflow | ⚠️ Build only |
+| **Auto-Fix Loop** | ✅ Automated | ⚠️ Manual trigger |
+| **iOS Simulator** | ❌ N/A | ✅ Native support |
+| **Swift/SwiftUI** | ⚠️ Basic | ✅ Optimized |
+| **Multi-file Edits** | ✅ Supported | ⚠️ Single file |
+| **Real-time Chat** | ✅ MCP chat | ❌ Commands only |
+
+### When to Use Which
+
+| Use Case | Recommended IDE |
+|----------|-----------------|
+| Web development (JS/TS/Python) | **Cursor IDE** |
+| iOS/macOS development | **Xcode Extension** |
+| Full-stack projects | **Cursor IDE** |
+| SwiftUI prototyping | **Xcode Extension** |
+| Code review & refactoring | **Both work well** |
+| Multi-model orchestration | **Cursor IDE** |
+| XCTest integration | **Xcode Extension** |
+
+---
+
+## 📱 Cursor IDE Setup
+
+Cursor IDE uses the **Model Context Protocol (MCP)** for seamless AI orchestration directly in the chat and composer.
+
+### How MCP Integration Works
+
+```
+┌────────────────────────────────────────────────────────┐
+│                    Cursor IDE                          │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │           MCP Client (Built-in)                 │  │
+│  └───────────────────────┬─────────────────────────┘  │
+│                          │ JSON-RPC                    │
+│                          ▼                             │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │        AI Orchestrator MCP Server               │  │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ │  │
+│  │  │ ChatGPT │ │ Claude  │ │ Gemini  │ │ Kimi  │ │  │
+│  │  │ (Arch)  │ │ (Code)  │ │(Reason) │ │(Review│ │  │
+│  │  └─────────┘ └─────────┘ └─────────┘ └───────┘ │  │
+│  └─────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
+```
+
+### Automatic Setup (Recommended)
+
+If you ran `./install.sh`, Cursor is already configured! Just restart Cursor.
+
+### Manual Setup
+
+If automatic setup didn't work or you prefer manual configuration:
+
+#### Step 1: Install MCP Server Dependencies
+
+```bash
+cd /path/to/ai_orchestrator/mcp_server
 pip install -r requirements.txt
 ```
+
+#### Step 2: Configure Cursor
+
+Open Cursor Settings (`Cmd+,` on Mac, `Ctrl+,` on Windows/Linux):
+
+1. Search for "MCP" in settings
+2. Click "Edit in settings.json"
+3. Add the MCP server configuration:
+
+```json
+{
+  "mcpServers": {
+    "ai-orchestrator": {
+      "command": "python",
+      "args": ["/path/to/ai_orchestrator/mcp_server/server.py"],
+      "env": {
+        "PYTHONPATH": "/path/to/ai_orchestrator"
+      },
+      "cwd": "/path/to/ai_orchestrator/mcp_server"
+    }
+  }
+}
+```
+
+> 💡 **Tip:** Replace `/path/to/ai_orchestrator` with your actual installation path.
+
+#### Step 3: Restart Cursor
+
+Close and reopen Cursor IDE for changes to take effect.
+
+### How to Verify Cursor is Connected
+
+1. **Open Cursor Chat** (`Cmd+L` or `Ctrl+L`)
+2. **Type `@`** - You should see "ai-orchestrator" in the suggestions
+3. **Check available tools** by asking: `@ai-orchestrator check_status()`
+
+**Expected output:**
+```
+✅ MCP Server Connected
+Available models:
+  - OpenAI (ChatGPT): ✅ Configured
+  - Anthropic (Claude): ✅ Configured
+  - Google (Gemini): ✅ Configured
+  - Moonshot (Kimi): ❌ Not configured
+```
+
+### Available Tools in Cursor
+
+Use these tools by typing `@ai-orchestrator` followed by the tool name:
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `orchestrate_task` | Full multi-model task execution | `@ai-orchestrator orchestrate_task("Build a todo app")` |
+| `analyze_task` | See routing plan without executing | `@ai-orchestrator analyze_task("Create a REST API")` |
+| `route_to_model` | Send to specific model | `@ai-orchestrator route_to_model("Fix this bug", "anthropic")` |
+| `run_project` | Execute any project | `@ai-orchestrator run_project("/path/to/project")` |
+| `test_project` | Run test suite | `@ai-orchestrator test_project("/path/to/project")` |
+| `analyze_errors` | Deep error analysis | `@ai-orchestrator analyze_errors("/path/to/project")` |
+| `fix_issues` | AI-powered auto-fix | `@ai-orchestrator fix_issues("/path/to/project")` |
+| `verify_project` | Full fix loop | `@ai-orchestrator verify_project("/path/to/project")` |
+| `check_status` | Check available models | `@ai-orchestrator check_status()` |
+| `get_available_models` | List all models | `@ai-orchestrator get_available_models()` |
+
+### Example Usage in Cursor
+
+**Design and implement a feature:**
+```
+@ai-orchestrator orchestrate_task("Design and implement a REST API for user management with JWT authentication")
+```
+
+**Debug a project:**
+```
+@ai-orchestrator analyze_errors("/Users/myuser/projects/myapp")
+@ai-orchestrator fix_issues("/Users/myuser/projects/myapp")
+```
+
+**Full development cycle:**
+```
+@ai-orchestrator verify_project("/Users/myuser/projects/myapp")
+```
+
+### Troubleshooting Cursor Connection
+
+#### ❌ "ai-orchestrator" not appearing in @ suggestions
+
+1. **Check settings.json syntax** - JSON must be valid
+2. **Verify file paths** - All paths must be absolute and exist
+3. **Check Python** - Run `which python` to verify Python is accessible
+4. **Restart Cursor** - Full restart, not just reload
+
+#### ❌ "Connection refused" or timeout errors
+
+```bash
+# Test the server manually
+cd /path/to/ai_orchestrator/mcp_server
+python server.py
+```
+
+If it fails, check:
+- Python version (requires 3.10+)
+- Missing dependencies: `pip install -r requirements.txt`
+- Missing API keys: Verify `.env` file exists
+
+#### ❌ "No tools available"
+
+Check that PYTHONPATH is set correctly in settings.json:
+```json
+"env": {
+  "PYTHONPATH": "/path/to/ai_orchestrator"
+}
+```
+
+#### ❌ Models showing "Not configured"
+
+Add API keys to your `.env` file:
+```bash
+cd /path/to/ai_orchestrator
+nano .env
+```
+
+> 📚 **Full Cursor documentation:** [`cursor_integration/CURSOR_SETUP.md`](cursor_integration/CURSOR_SETUP.md)
+
+---
+
+## 🔧 Xcode Extension Setup
+
+The Xcode extension provides native AI orchestration for Swift and SwiftUI development.
+
+### Prerequisites
+
+| Requirement | Minimum Version |
+|-------------|-----------------|
+| **macOS** | 13.0 (Ventura) or later |
+| **Xcode** | 15.0 or later |
+| **Python** | 3.10 or later |
+
+### Installation Steps
+
+#### Step 1: Build the Extension
+
+```bash
+# Navigate to the macOS app directory
+cd /path/to/ai_orchestrator/macos_app/AI\ Orchestrator\ Manager
+
+# Run the build script
+./Scripts/build.sh
+```
+
+#### Step 2: Install the Extension
+
+```bash
+# Run the installation script
+./Scripts/install.sh
+```
+
+This will:
+- Copy the extension to `~/Library/Developer/Xcode/Plug-ins/`
+- Register the extension with Xcode
+- Set up the connection to AI Orchestrator
+
+#### Step 3: Enable the Extension in Xcode
+
+1. **Open Xcode**
+2. **Go to Settings** (`Cmd+,`)
+3. **Select "Extensions"** tab
+4. **Find "AI Orchestrator"** in the list
+5. **Check the box** to enable it
+6. **Restart Xcode**
+
+```
+┌─────────────────────────────────────────────────┐
+│  Xcode > Settings > Extensions                  │
+├─────────────────────────────────────────────────┤
+│  ☑️ AI Orchestrator                             │
+│     └── ☑️ Source Editor Commands               │
+│     └── ☑️ Build System Commands                │
+└─────────────────────────────────────────────────┘
+```
+
+### Available Commands and Keyboard Shortcuts
+
+Access commands via **Editor menu** or keyboard shortcuts:
+
+| Command | Shortcut | Description |
+|---------|----------|-------------|
+| **Orchestrate Selection** | `⌃⌥⌘O` | Route selected code to best AI model |
+| **Generate Code** | `⌃⌥⌘G` | Generate code from comment/description |
+| **Review Code** | `⌃⌥⌘R` | Get AI code review for selection |
+| **Fix Errors** | `⌃⌥⌘F` | Auto-fix errors in current file |
+| **Explain Code** | `⌃⌥⌘E` | Get explanation of selected code |
+| **Generate Tests** | `⌃⌥⌘T` | Generate XCTest for selected code |
+| **Optimize Code** | `⌃⌥⌘P` | Optimize selected code for performance |
+
+### How to Use the Extension
+
+#### Method 1: Editor Menu
+
+1. **Select code** in Xcode editor
+2. **Go to Editor menu** → **AI Orchestrator**
+3. **Choose command** (e.g., "Review Code")
+
+#### Method 2: Keyboard Shortcuts
+
+1. **Select code** in Xcode editor
+2. **Press shortcut** (e.g., `⌃⌥⌘R` for review)
+
+#### Method 3: Right-Click Context Menu
+
+1. **Select code** in Xcode editor
+2. **Right-click** to open context menu
+3. **Select AI Orchestrator** → Choose command
+
+### Example Workflows
+
+#### 🔄 SwiftUI View Development
+
+```swift
+// 1. Write a comment describing what you want
+// TODO: Create a SwiftUI view for a user profile card with avatar, name, and bio
+
+// 2. Select the comment
+// 3. Press ⌃⌥⌘G (Generate Code)
+// 4. AI Orchestrator generates:
+
+struct UserProfileCard: View {
+    let user: User
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            AsyncImage(url: user.avatarURL) { image in
+                image.resizable()
+            } placeholder: {
+                Circle().fill(.gray.opacity(0.3))
+            }
+            .frame(width: 80, height: 80)
+            .clipShape(Circle())
+            
+            Text(user.name)
+                .font(.headline)
+            
+            Text(user.bio)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+    }
+}
+```
+
+#### 🐛 Error Fixing
+
+```swift
+// 1. You have code with errors
+func fetchData() {
+    let url = URL(string: "https://api.example.com/data")
+    URLSession.shared.dataTask(with: url) { data, response, error in
+        // Missing error handling, force unwrapping
+        let json = try! JSONDecoder().decode(MyModel.self, from: data!)
+        print(json)
+    }
+}
+
+// 2. Select the function
+// 3. Press ⌃⌥⌘F (Fix Errors)
+// 4. AI Orchestrator suggests fixes with proper error handling
+```
+
+#### 🧪 Test Generation
+
+```swift
+// 1. Select a function you want to test
+func calculateDiscount(price: Double, percentage: Double) -> Double {
+    return price * (1 - percentage / 100)
+}
+
+// 2. Press ⌃⌥⌘T (Generate Tests)
+// 3. AI Orchestrator generates XCTest:
+
+class DiscountCalculatorTests: XCTestCase {
+    func testCalculateDiscount_withValidPercentage() {
+        let result = calculateDiscount(price: 100, percentage: 20)
+        XCTAssertEqual(result, 80.0, accuracy: 0.001)
+    }
+    
+    func testCalculateDiscount_withZeroPercentage() {
+        let result = calculateDiscount(price: 100, percentage: 0)
+        XCTAssertEqual(result, 100.0, accuracy: 0.001)
+    }
+    
+    func testCalculateDiscount_with100Percentage() {
+        let result = calculateDiscount(price: 100, percentage: 100)
+        XCTAssertEqual(result, 0.0, accuracy: 0.001)
+    }
+}
+```
+
+### Troubleshooting Xcode Extension
+
+#### ❌ Extension not appearing in Xcode settings
+
+1. **Verify installation location:**
+   ```bash
+   ls ~/Library/Developer/Xcode/Plug-ins/
+   # Should show: AIOrchestrator.xcplugin
+   ```
+
+2. **Re-run installation:**
+   ```bash
+   cd /path/to/ai_orchestrator/macos_app/AI\ Orchestrator\ Manager
+   ./Scripts/install.sh
+   ```
+
+3. **Check macOS security:**
+   - Go to **System Settings** → **Privacy & Security**
+   - Allow the extension if blocked
+
+#### ❌ Commands not responding
+
+1. **Check AI Orchestrator is running:**
+   ```bash
+   cd /path/to/ai_orchestrator
+   ./scripts/status.sh
+   ```
+
+2. **Verify API keys:**
+   ```bash
+   ai-orchestrator status
+   ```
+
+3. **Check Xcode console:**
+   - Open **Xcode** → **View** → **Debug Area** → **Activate Console**
+   - Look for error messages
+
+#### ❌ Slow response times
+
+1. **Check network connection**
+2. **Verify API quotas** aren't exceeded
+3. **Try simpler selections** (smaller code blocks)
+
+#### ❌ Extension disabled after Xcode update
+
+After major Xcode updates, you may need to:
+1. **Re-enable the extension** in Xcode Settings
+2. **Re-build** if needed: `./Scripts/build.sh`
+
+> 📚 **Full Xcode documentation:** [`macos_app/AI Orchestrator Manager/USER_GUIDE.md`](macos_app/AI%20Orchestrator%20Manager/USER_GUIDE.md)
+
+---
 
 ## ⚙️ Configuration
 
 ### 1. Create Configuration File
 
 ```bash
-# Option A: Use the init command
+# Option A: Use the init command (recommended)
 ai-orchestrator init
 
 # Option B: Copy the example file
@@ -123,11 +551,34 @@ MOONSHOT_API_KEY=your-moonshot-api-key-here
 ai-orchestrator status
 ```
 
-**Note**: You don't need all API keys - the tool works with any combination of available models.
+> **Note**: You don't need all API keys - the tool works with any combination of available models.
 
-## 🚀 Usage
+### Custom Model Selection
 
-### Basic Usage
+```env
+# Override default model names
+OPENAI_MODEL=gpt-4o
+ANTHROPIC_MODEL=claude-3-opus-20240229
+GEMINI_MODEL=gemini-2.5-flash          # Latest stable (default)
+# GEMINI_MODEL=gemini-flash-latest     # Always use latest flash version
+# GEMINI_MODEL=gemini-2.5-pro          # Premium model
+MOONSHOT_MODEL=moonshot-v1-32k
+```
+
+> 📖 See [MODELS.md](MODELS.md) for a complete list of available models, pricing, and access requirements.
+
+### Checking Available Models
+
+```bash
+# List available Gemini models
+ai-orchestrator list-models gemini
+```
+
+---
+
+## 🖥️ Usage
+
+### Basic CLI Usage
 
 ```bash
 # Run a task
@@ -188,182 +639,57 @@ ai-orchestrator run "Review this code for security vulnerabilities"
 ai-orchestrator run "Audit this function for best practices"
 ```
 
-## 🖥️ Cursor IDE Integration
+---
 
-The AI Orchestrator integrates with Cursor IDE in two ways:
+## 🔄 Complete Development Cycle
 
-### Option 1: MCP Server Integration (Recommended)
-
-Use the Model Context Protocol (MCP) for seamless AI orchestration directly in Cursor's chat and composer.
+The AI Orchestrator supports a full development workflow:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                    Cursor IDE                          │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │              MCP Client (Built-in)              │  │
-│  └───────────────────────┬─────────────────────────┘  │
-│                          │                             │
-│                          ▼                             │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │        AI Orchestrator MCP Server               │  │
-│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ │  │
-│  │  │ ChatGPT │ │ Claude  │ │ Gemini  │ │ Kimi  │ │  │
-│  │  │ (Arch)  │ │ (Code)  │ │(Reason) │ │(Review│ │  │
-│  │  └─────────┘ └─────────┘ └─────────┘ └───────┘ │  │
-│  └─────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
+PLAN → CODE → RUN → TEST → FIX → VERIFY → REVIEW → DONE
 ```
 
-#### Quick Setup
+### Quick Start for Full Project Development
 
-1. **Install the MCP Server:**
-   ```bash
-   cd /home/ubuntu/ai_orchestrator/mcp_server
-   pip install -r requirements.txt
-   ```
+```bash
+# In Cursor IDE with MCP:
 
-2. **Add to Cursor settings.json** (`Cmd+,` → search "MCP" → Edit in settings.json):
-   ```json
-   {
-     "mcpServers": {
-       "ai-orchestrator": {
-         "command": "python",
-         "args": ["/home/ubuntu/ai_orchestrator/mcp_server/server.py"],
-         "env": {
-           "PYTHONPATH": "/home/ubuntu/ai_orchestrator"
-         },
-         "cwd": "/home/ubuntu/ai_orchestrator/mcp_server"
-       }
-     }
-   }
-   ```
+# 1. Design & Implement
+@ai-orchestrator orchestrate_task("Build a REST API for user management with JWT auth")
 
-3. **Restart Cursor** and use in chat:
-   ```
-   @ai-orchestrator orchestrate_task("Design and implement a REST API")
-   @ai-orchestrator analyze_task("Build a user authentication system")
-   @ai-orchestrator route_to_model("Review this code for security", "moonshot")
-   ```
+# 2. Run project and auto-fix any issues
+@ai-orchestrator verify_project("/path/to/project")
 
-#### Available MCP Tools
+# 3. Review the final code
+@ai-orchestrator orchestrate_task("Review the implementation for security")
+```
+
+### What the Verification Loop Does
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    VERIFICATION LOOP                         │
+├─────────────────────────────────────────────────────────────┤
+│  Cycle 1: RUN → 5 errors → FIX 3 → Progress: 40%           │
+│  Cycle 2: RUN → 2 errors → FIX 1 → Progress: 80%           │
+│  Cycle 3: RUN → 1 error  → FIX 1 → Progress: 100% ✅        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Execution & Auto-Fix Tools
 
 | Tool | Purpose | Example |
 |------|---------|---------|
-| `orchestrate_task` | Full multi-model task execution | `orchestrate_task("Build a todo app")` |
-| `analyze_task` | See routing plan without executing | `analyze_task("Create a REST API")` |
-| `route_to_model` | Send to specific model | `route_to_model("Fix this bug", "anthropic")` |
-| `check_status` | Check available models | `check_status()` |
-| `get_available_models` | List all models | `get_available_models()` |
+| `run_project` | Execute any project | `run_project("/path")` |
+| `test_project` | Run test suite | `test_project("/path")` |
+| `analyze_errors` | Deep error analysis | `analyze_errors("/path")` |
+| `fix_issues` | AI-powered auto-fix | `fix_issues("/path")` |
+| `verify_project` | Full fix loop | `verify_project("/path")` |
+| `orchestrate_full_development` | Complete workflow | `orchestrate_full_development("desc", "/path")` |
 
-#### Cursor Integration Documentation
-
-📚 **Full setup guide:** [`cursor_integration/CURSOR_SETUP.md`](cursor_integration/CURSOR_SETUP.md)
-
-📋 **Cursor rules template:** [`cursor_integration/.cursorrules`](cursor_integration/.cursorrules)
-
-⚙️ **Settings template:** [`cursor_integration/cursor-settings.json`](cursor_integration/cursor-settings.json)
-
-🔄 **Development workflow:** [`cursor_integration/DEVELOPMENT_WORKFLOW.md`](cursor_integration/DEVELOPMENT_WORKFLOW.md)
-
-📊 **Visual workflows:** [`WORKFLOWS.md`](WORKFLOWS.md)
-
-#### Example Workflows
-
-See complete examples in [`cursor_integration/examples/`](cursor_integration/examples/):
-
-| Example | Description |
-|---------|-------------|
-| [01_rest_api.md](cursor_integration/examples/01_rest_api.md) | Building a REST API with task breakdown |
-| [02_fullstack_webapp.md](cursor_integration/examples/02_fullstack_webapp.md) | Complex full-stack orchestration |
-| [03_code_review.md](cursor_integration/examples/03_code_review.md) | Security review and refactoring workflow |
-| [04_auto_fix_workflow.md](cursor_integration/examples/04_auto_fix_workflow.md) | Auto-fix common errors |
-| [05_full_development_cycle.md](cursor_integration/examples/05_full_development_cycle.md) | Complete project from idea to working code |
-| [06_debugging_and_testing.md](cursor_integration/examples/06_debugging_and_testing.md) | Debugging and testing strategies |
-
-#### Sample Projects
-
-Practice with intentional bugs:
-- [Node.js project with bugs](cursor_integration/examples/sample_projects/nodejs_buggy/)
-- [Python Flask project with issues](cursor_integration/examples/sample_projects/flask_buggy/)
+📚 **See [WORKFLOWS.md](WORKFLOWS.md) for visual workflow diagrams and decision trees.**
 
 ---
-
-### Option 2: CLI in Terminal
-
-Use the CLI directly from Cursor's integrated terminal:
-
-1. **Open Terminal**: Press `` Ctrl+` `` in Cursor to open the integrated terminal
-
-2. **Navigate to Project**: 
-   ```bash
-   cd /path/to/your/project
-   ```
-
-3. **Initialize Configuration**:
-   ```bash
-   ai-orchestrator init
-   # Edit .env with your API keys
-   ```
-
-4. **Use AI Orchestrator**:
-   ```bash
-   ai-orchestrator run "Your task here"
-   ```
-
-#### CLI Workflow Examples
-
-**Example 1: Feature Development**
-```bash
-# Step 1: Get architecture guidance
-ai-orchestrator run "Design the architecture for user authentication with OAuth2"
-
-# Step 2: Get implementation
-ai-orchestrator run "Implement OAuth2 authentication handler in Python" -o auth.py
-
-# Step 3: Review the code
-ai-orchestrator run "Review this OAuth implementation for security issues"
-```
-
-**Example 2: Bug Investigation**
-```bash
-# Analyze and debug
-ai-orchestrator run "Debug: API returns 500 error when user data contains unicode"
-```
-
-**Example 3: Complex Task**
-```bash
-# AI Orchestrator automatically breaks this into subtasks
-ai-orchestrator run "Design and implement a caching layer for our API with Redis, including architecture decisions and code review"
-```
-
-#### Creating a Cursor Task
-
-Add to `.vscode/tasks.json`:
-
-```json
-{
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "AI Orchestrator",
-      "type": "shell",
-      "command": "ai-orchestrator run \"${input:taskDescription}\"",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
-    }
-  ],
-  "inputs": [
-    {
-      "id": "taskDescription",
-      "type": "promptString",
-      "description": "Enter your task description"
-    }
-  ]
-}
-```
 
 ## 📊 How It Works
 
@@ -386,33 +712,6 @@ Add to `.vscode/tasks.json`:
 | Reasoning | analyze, why, compare, trade-off, evaluate |
 | Code Review | review, audit, inspect, security, quality |
 
-## 🔧 Advanced Configuration
-
-### Custom Model Selection
-
-```env
-# Override default model names
-OPENAI_MODEL=gpt-4o
-ANTHROPIC_MODEL=claude-3-opus-20240229
-GEMINI_MODEL=gemini-2.5-flash          # Latest stable (default)
-# GEMINI_MODEL=gemini-flash-latest     # Always use latest flash version
-# GEMINI_MODEL=gemini-2.5-pro          # Premium model
-MOONSHOT_MODEL=moonshot-v1-32k
-```
-
-> 📖 See [MODELS.md](MODELS.md) for a complete list of available models, pricing, and access requirements.
-
-### Checking Available Models
-
-Google Gemini model availability varies by region and account type. To see which models are available for your API key:
-
-```bash
-# List available Gemini models
-ai-orchestrator list-models gemini
-```
-
-> 💡 **Tip**: The default model is `gemini-2.5-flash`. You can also use `gemini-flash-latest` to always use the latest flash version automatically.
-
 ### Programmatic Usage
 
 ```python
@@ -434,16 +733,13 @@ for subtask, response in result.subtask_results:
     print(f"{subtask.target_model}: {response.content[:100]}...")
 ```
 
+---
+
 ## ❓ Troubleshooting
 
 ### Model Access Errors (404 Not Found)
 
-If you see errors like `404: Model 'gpt-4' not found` or `404: Model 'gemini-pro' not found`, this means the model names are outdated.
-
-**Solution:**
-
-1. Update to the latest version of AI Orchestrator
-2. Or manually update your `.env` file with current model names:
+If you see errors like `404: Model 'gpt-4' not found`, update your `.env` file:
 
 ```env
 # Use these current model names
@@ -453,40 +749,36 @@ GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 ```
 
-> 💡 **Tip**: Use `gemini-flash-latest` or `gemini-pro-latest` as aliases that always point to the latest version of the respective model family.
-
 ### Common Model Errors
 
 | Error | Provider | Solution |
 |-------|----------|----------|
 | `404 model not found` | OpenAI | Use `gpt-4o-mini` instead of `gpt-4` |
-| `404 model not found` | Gemini | Run `ai-orchestrator list-models gemini` to see available models. Use `gemini-2.5-flash` (default). |
-| `not available to new users` | Gemini | Use `gemini-2.5-flash` or `gemini-flash-latest` |
+| `404 model not found` | Gemini | Use `gemini-2.5-flash` |
 | `invalid_api_key` | Any | Regenerate API key in provider console |
 | `insufficient_quota` | OpenAI | Add billing to your OpenAI account |
 | `rate_limit_exceeded` | Any | Wait and retry, or upgrade API tier |
 
 ### API Key Issues
 
-If models aren't being detected:
-
 1. **Check your `.env` file exists** in the project directory
 2. **Verify API key format**:
    - OpenAI: Starts with `sk-`
    - Anthropic: Starts with `sk-ant-`
    - Gemini: Alphanumeric string
-   - Moonshot: Check provider documentation
+3. **Run status check**: `ai-orchestrator status`
 
-3. **Run status check**:
-```bash
-ai-orchestrator status
-```
+### IDE-Specific Troubleshooting
+
+- **Cursor issues**: See [Troubleshooting Cursor Connection](#troubleshooting-cursor-connection)
+- **Xcode issues**: See [Troubleshooting Xcode Extension](#troubleshooting-xcode-extension)
 
 ### Getting Help
 
 - 📖 See [MODELS.md](MODELS.md) for detailed model information
+- 🖥️ See [cursor_integration/CURSOR_SETUP.md](cursor_integration/CURSOR_SETUP.md) for Cursor help
+- 📱 See [macos_app/AI Orchestrator Manager/TROUBLESHOOTING.md](macos_app/AI%20Orchestrator%20Manager/TROUBLESHOOTING.md) for Xcode help
 - 🐛 Report issues on GitHub
-- 💬 Check provider documentation for API-specific issues
 
 ---
 
@@ -496,23 +788,21 @@ ai-orchestrator status
 
 ```
 ai_orchestrator/
-├── ai_orchestrator/
-│   ├── __init__.py
-│   ├── cli.py              # CLI interface
-│   ├── config.py           # Configuration management
-│   ├── orchestrator.py     # Main orchestration logic
-│   ├── router.py           # Task routing logic
-│   └── models/
-│       ├── __init__.py
-│       ├── base.py         # Base model client
-│       ├── openai_client.py
-│       ├── anthropic_client.py
-│       ├── gemini_client.py
-│       └── moonshot_client.py
-├── .env.example
-├── requirements.txt
-├── pyproject.toml
-└── README.md
+├── ai_orchestrator/          # Core Python package
+│   ├── cli.py                # CLI interface
+│   ├── config.py             # Configuration management
+│   ├── orchestrator.py       # Main orchestration logic
+│   ├── router.py             # Task routing logic
+│   ├── models/               # AI model clients
+│   └── execution/            # Project execution & auto-fix
+├── mcp_server/               # Cursor MCP integration
+├── cursor_integration/       # Cursor setup docs & examples
+├── macos_app/                # Xcode extension
+├── scripts/                  # Server management scripts
+├── .env.example              # Config template
+├── install.sh                # One-command installation
+├── requirements.txt          # Python dependencies
+└── README.md                 # This file
 ```
 
 ### Running Tests
@@ -524,6 +814,8 @@ pytest tests/
 # Run with coverage
 pytest --cov=ai_orchestrator tests/
 ```
+
+---
 
 ## 🤝 Contributing
 

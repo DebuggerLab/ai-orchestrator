@@ -1,0 +1,15 @@
+{
+  "name": "nodejs-buggy-project",
+  "version": "1.0.0",
+  "description": "A sample project with intentional bugs for testing auto-fix",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "jest"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

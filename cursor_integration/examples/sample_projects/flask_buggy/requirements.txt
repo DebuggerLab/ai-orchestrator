@@ -1,0 +1,5 @@
+# BUG #1: Missing flask dependency
+# The orchestrator should detect this and add flask
+
+# Only test dependencies listed
+pytest>=7.0.0

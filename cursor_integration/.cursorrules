@@ -1,15 +1,51 @@
 # AI Orchestrator Rules for Cursor
 
 # This file instructs Cursor on how to use the AI Orchestrator MCP server
-# for intelligent multi-model task routing during project development.
+# for intelligent multi-model task routing and complete project development.
 
 ## Overview
 
-You have access to an AI Orchestrator that routes tasks to specialized AI models:
+You have access to an AI Orchestrator that provides:
+
+### Multi-Model Routing
 - **ChatGPT (OpenAI)**: Architecture, system design, roadmaps, planning
 - **Claude (Anthropic)**: Coding, implementation, debugging, technical writing
 - **Gemini (Google)**: Reasoning, analysis, explanations, research
 - **Kimi (Moonshot)**: Code review, quality assessment, best practices
+
+### Project Execution & Auto-Fix
+- **run_project**: Execute any project with auto-detection
+- **test_project**: Run tests with framework auto-detection
+- **analyze_errors**: Deep error analysis with root cause
+- **fix_issues**: AI-powered auto-fix with validation
+- **verify_project**: Complete run-test-fix loop
+
+---
+
+## Complete Tool Reference
+
+### Task Orchestration Tools
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `orchestrate_task` | Full multi-model execution | `orchestrate_task("Build a REST API")` |
+| `analyze_task` | See routing without execution | `analyze_task("Create auth system")` |
+| `route_to_model` | Direct model routing | `route_to_model("Fix bug", "anthropic")` |
+| `check_status` | Check available models | `check_status()` |
+| `get_available_models` | List all models | `get_available_models()` |
+
+### Execution & Testing Tools
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `run_project` | Execute project | `run_project("/path/to/project")` |
+| `test_project` | Run test suite | `test_project("/path/to/project")` |
+| `analyze_errors` | Analyze errors | `analyze_errors("/path/to/project")` |
+| `fix_issues` | Apply auto-fixes | `fix_issues("/path/to/project")` |
+| `verify_project` | Full verification loop | `verify_project("/path/to/project")` |
+| `orchestrate_full_development` | Complete workflow | `orchestrate_full_development(description, path)` |
+
+---
 
 ## When to Use Each Model
 
@@ -48,50 +84,183 @@ You have access to an AI Orchestrator that routes tasks to specialized AI models
 - Style and consistency checks
 - PR review assistance
 
-## How to Break Down Projects
+---
 
-When given a complex project, follow this workflow:
+## When to Use Execution Tools
 
-1. **Architecture Phase** (Use ChatGPT)
-   - Start with `analyze_task()` to understand requirements
-   - Request high-level architecture design
-   - Define component boundaries and interfaces
-   - Create a project roadmap
+### Use `run_project` when:
+- You need to verify code compiles/starts
+- Testing after implementation
+- Checking for runtime errors
+- Verifying environment setup
 
-2. **Implementation Phase** (Use Claude)
-   - Break architecture into coding tasks
-   - Implement core functionality first
-   - Add error handling and edge cases
-   - Write accompanying tests
+### Use `test_project` when:
+- Running automated tests
+- Checking test coverage
+- Verifying functionality
+- After any code changes
 
-3. **Reasoning Phase** (Use Gemini)
-   - Validate algorithmic approaches
-   - Analyze performance implications
-   - Explain complex decisions
-   - Research alternative solutions
+### Use `analyze_errors` when:
+- Understanding why something failed
+- Before attempting fixes
+- When errors are complex
+- Needing root cause analysis
 
-4. **Review Phase** (Use Kimi)
-   - Review completed code for quality
-   - Check for security issues
-   - Ensure best practices are followed
-   - Suggest final improvements
+### Use `fix_issues` when:
+- After error analysis
+- Fixing common issues (dependencies, syntax)
+- Applying AI-generated fixes
+- Quick fixes for known patterns
 
-## Best Practices for Multi-Model Orchestration
+### Use `verify_project` when:
+- Multiple errors need fixing
+- Want automatic fix-verify loop
+- Starting a new project
+- After major changes
+- Preparing for deployment
+
+### Use `orchestrate_full_development` when:
+- Building a project from scratch
+- Want end-to-end development
+- Need planning through review
+
+---
+
+## The Verification Loop
+
+The `verify_project` tool runs an intelligent loop:
+
+```
+┌─────────────┐
+│    RUN      │ Execute project
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│    TEST     │ Run test suite
+└──────┬──────┘
+       │
+       ▼
+   ┌───────┐
+   │Errors?│──NO──▶ ✅ SUCCESS
+   └───┬───┘
+       │YES
+       ▼
+┌─────────────┐
+│  ANALYZE    │ Categorize errors
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│    FIX      │ Apply AI fixes
+└──────┬──────┘
+       │
+       ▼
+   ┌───────┐
+   │Stuck? │──YES──▶ ⚠️ MANUAL NEEDED
+   └───┬───┘
+       │NO
+       └────────▶ Back to RUN
+```
+
+### Trigger the verification loop when:
+- Project has errors after implementation
+- Tests are failing
+- You want automatic error resolution
+- Starting fresh development
+
+### The loop stops when:
+- All tests pass
+- Max cycles reached (default 10)
+- Same error occurs 3+ times
+- No progress in 3 cycles
+
+---
+
+## How to Handle Auto-Fix Suggestions
+
+### High Confidence Fixes (0.9+)
+Auto-applied safely:
+- Dependency installation
+- Port conflicts
+- Permission fixes
+- Environment setup
+
+### Medium Confidence Fixes (0.7-0.9)
+Applied with backup:
+- Syntax corrections
+- Import fixes
+- Simple code changes
+
+### Low Confidence Fixes (< 0.7)
+Review before applying:
+- Logic changes
+- Algorithm modifications
+- Architecture updates
+
+### Handling Fix Failures
+
+If a fix doesn't work:
+1. Backups are in `.backups/` directory
+2. Rollback: `cp .backups/file.py.timestamp original.py`
+3. Try manual fix with orchestrator guidance
+
+---
+
+## Full Development Cycle Guidelines
+
+### Phase 1: Architecture (ChatGPT)
+```
+@ai-orchestrator orchestrate_task("Design architecture for [project description]")
+```
+- Get high-level design
+- Define components and interfaces
+- Plan database schema
+
+### Phase 2: Implementation (Claude)
+```
+@ai-orchestrator orchestrate_task("Implement [feature] based on the architecture")
+```
+- Generate code
+- Add error handling
+- Include validation
+
+### Phase 3: Execution & Testing
+```
+@ai-orchestrator verify_project("/path/to/project")
+```
+- Run and test project
+- Auto-fix issues
+- Loop until passing
+
+### Phase 4: Review (Kimi)
+```
+@ai-orchestrator orchestrate_task("Review [project] for security and best practices")
+```
+- Security audit
+- Performance check
+- Code quality review
+
+---
+
+## Best Practices
 
 ### DO:
-- Use `orchestrate_task()` for complex, multi-step tasks
-- Use `analyze_task()` before starting large projects
-- Use `route_to_model()` when you know which model is best
-- Provide clear, specific task descriptions
-- Include relevant context and code snippets
-- Break large tasks into smaller, focused subtasks
+- Use `analyze_errors()` before `fix_issues()`
+- Use `verify_project()` for complex issues
+- Review low-confidence fixes manually
+- Check backups after major fixes
+- Run tests after every change
+- Use specific task descriptions
 
 ### DON'T:
-- Route simple coding tasks to ChatGPT (use Claude)
-- Send code review tasks to Claude (use Kimi)
-- Use `orchestrate_task()` for quick one-off questions
-- Provide vague or ambiguous task descriptions
-- Forget to include error messages when debugging
+- Apply fixes without analysis for complex errors
+- Ignore low-confidence warnings
+- Skip the review phase
+- Force fixes on production code
+- Run `verify_project` infinitely (use limits)
+
+---
 
 ## Task Description Templates
 
@@ -114,6 +283,15 @@ Implement [feature/function] that:
 - Context: [relevant existing code]
 ```
 
+### For Debugging Tasks:
+```
+Debug and fix:
+- Error: [paste error message]
+- Context: [what you were doing]
+- Expected: [what should happen]
+- Actual: [what happened]
+```
+
 ### For Review Tasks:
 ```
 Review this code for:
@@ -124,56 +302,73 @@ Review this code for:
 [paste code]
 ```
 
-### For Reasoning Tasks:
-```
-Analyze/Explain:
-- Topic: [what to analyze]
-- Depth: [surface overview vs deep dive]
-- Format: [how to structure the response]
-- Context: [why you need this information]
-```
+---
 
 ## Quick Reference
 
+### Task Routing
 | Task Type | Primary Model | Tool Call |
 |-----------|--------------|----------|
-| Design system architecture | ChatGPT | `route_to_model(task, "openai")` |
-| Write new code | Claude | `route_to_model(task, "anthropic")` |
+| Design system | ChatGPT | `route_to_model(task, "openai")` |
+| Write code | Claude | `route_to_model(task, "anthropic")` |
 | Debug errors | Claude | `route_to_model(task, "anthropic")` |
 | Explain concepts | Gemini | `route_to_model(task, "gemini")` |
 | Review code | Kimi | `route_to_model(task, "moonshot")` |
-| Complex multi-step | Auto | `orchestrate_task(task)` |
-| Analyze before starting | Auto | `analyze_task(task)` |
+| Multi-step task | Auto | `orchestrate_task(task)` |
 
-## Example Project Workflow
+### Execution Tools
+| Need | Tool | Command |
+|------|------|---------|
+| Run project | `run_project` | `run_project("/path")` |
+| Run tests | `test_project` | `test_project("/path")` |
+| Analyze errors | `analyze_errors` | `analyze_errors("/path")` |
+| Fix issues | `fix_issues` | `fix_issues("/path")` |
+| Full loop | `verify_project` | `verify_project("/path")` |
 
-Building a REST API:
+---
 
+## Example Workflows
+
+### New Feature Development
 ```
-1. analyze_task("Build a REST API for user management with authentication")
-   → See the task breakdown and routing plan
-
-2. orchestrate_task("Design the architecture for a user management REST API")
-   → ChatGPT: Designs endpoints, data models, auth flow
-
-3. route_to_model("Implement the User model and database schema", "anthropic")
-   → Claude: Writes the code
-
-4. route_to_model("Implement JWT authentication middleware", "anthropic")
-   → Claude: Writes auth code
-
-5. route_to_model("Review the authentication implementation for security", "moonshot")
-   → Kimi: Reviews for vulnerabilities
-
-6. route_to_model("Explain the security implications of JWT vs sessions", "gemini")
-   → Gemini: Provides detailed analysis
+1. orchestrate_task("Design the feature architecture")
+2. orchestrate_task("Implement the feature")
+3. verify_project("/path/to/project")
+4. orchestrate_task("Review the implementation")
 ```
+
+### Fix Failing Tests
+```
+1. test_project("/path/to/project")  # See failures
+2. analyze_errors("/path/to/project")  # Understand why
+3. fix_issues("/path/to/project")  # Apply fixes
+4. test_project("/path/to/project")  # Verify fixed
+```
+
+### Production Bug Fix
+```
+1. analyze_errors("/path/to/project", error="[paste error]")
+2. route_to_model("Explain why this error occurs", "gemini")
+3. fix_issues("/path/to/project")
+4. verify_project("/path/to/project")
+5. route_to_model("Review the fix for production safety", "moonshot")
+```
+
+---
 
 ## Error Handling
 
-If a model is unavailable, the orchestrator will:
-1. Attempt to use an alternative model
-2. Return an error with guidance on which API key is missing
-3. Suggest manual routing to an available model
+### If a model is unavailable:
+- Orchestrator attempts alternative model
+- Returns error with guidance
+- Use `check_status()` to see available models
 
-Use `check_status()` to see which models are currently available.
+### If execution fails:
+- Error output captured in result
+- Use `analyze_errors()` for deep analysis
+- Backups created before any fixes
+
+### If stuck in verification loop:
+- Loop auto-terminates after max cycles
+- Report shows what couldn't be fixed
+- Suggests manual intervention steps

@@ -218,40 +218,156 @@ This shows which AI models are configured and available.
 
 ### Available Tools
 
-#### 1. `orchestrate_task`
+The AI Orchestrator provides 11 tools organized into three categories:
+
+#### Task Orchestration Tools
+
+##### 1. `orchestrate_task`
 Fully process a task with automatic model routing and execution.
 
 ```
 @ai-orchestrator orchestrate_task("Design and implement a REST API for a todo app")
 ```
 
-#### 2. `analyze_task`
+##### 2. `analyze_task`
 Analyze a task without executing it - see the routing plan.
 
 ```
 @ai-orchestrator analyze_task("Review this code for security vulnerabilities")
 ```
 
-#### 3. `route_to_model`
+##### 3. `route_to_model`
 Route directly to a specific model.
 
 ```
 @ai-orchestrator route_to_model("Explain how async/await works in Python", "gemini")
 ```
 
-#### 4. `check_status`
+##### 4. `check_status`
 Check which models are available.
 
 ```
 @ai-orchestrator check_status()
 ```
 
-#### 5. `get_available_models`
+##### 5. `get_available_models`
 List all configured models and their specializations.
 
 ```
 @ai-orchestrator get_available_models()
 ```
+
+#### Execution & Testing Tools
+
+##### 6. `run_project`
+Execute a project with automatic type detection (Python, Node.js, React, etc.).
+
+```
+@ai-orchestrator run_project("/path/to/project")
+```
+
+**Parameters:**
+- `project_path`: Path to the project directory
+- `timeout` (optional): Max execution time in seconds (default: 300)
+
+**Returns:**
+- Execution status (success/error/timeout)
+- Stdout and stderr output
+- Detected project type
+- Error analysis if failed
+
+##### 7. `test_project`
+Run tests with automatic framework detection (pytest, jest, mocha, etc.).
+
+```
+@ai-orchestrator test_project("/path/to/project")
+```
+
+**Parameters:**
+- `project_path`: Path to the project directory
+- `test_path` (optional): Specific test file/directory
+- `pattern` (optional): Test name pattern to match
+
+**Returns:**
+- Test results (passed, failed, skipped counts)
+- Individual test case details
+- Failure messages and stack traces
+
+##### 8. `analyze_errors`
+Deep analysis of project errors with AI-powered root cause detection.
+
+```
+@ai-orchestrator analyze_errors("/path/to/project")
+```
+
+**Parameters:**
+- `project_path`: Path to the project directory
+- `error_log` (optional): Paste specific error text to analyze
+
+**Returns:**
+- Error categorization (syntax, runtime, dependency, etc.)
+- Root cause analysis
+- Suggested fixes with confidence scores
+- File and line number identification
+
+##### 9. `fix_issues`
+Apply automated fixes to detected issues.
+
+```
+@ai-orchestrator fix_issues("/path/to/project")
+```
+
+**Parameters:**
+- `project_path`: Path to the project directory
+- `strategy` (optional): Specific fix strategy to use
+- `dry_run` (optional): Preview fixes without applying
+
+**Returns:**
+- List of applied fixes
+- Backup file locations
+- Fix confidence scores
+- Validation results
+
+##### 10. `verify_project`
+Run the complete verification loop: execute → test → analyze → fix → repeat.
+
+```
+@ai-orchestrator verify_project("/path/to/project")
+```
+
+**Parameters:**
+- `project_path`: Path to the project directory
+- `max_cycles` (optional): Maximum fix cycles (default: 10)
+- `run_tests` (optional): Whether to run tests (default: true)
+
+**Returns:**
+- Final status (success/partial/failed)
+- Number of cycles completed
+- All fixes applied
+- Progress report
+- Recommendations if manual fix needed
+
+##### 11. `orchestrate_full_development`
+Complete development workflow from planning to review.
+
+```
+@ai-orchestrator orchestrate_full_development(
+  "Build a REST API with user authentication",
+  "/path/to/project"
+)
+```
+
+**Parameters:**
+- `description`: Project description/requirements
+- `project_path`: Where to create the project
+
+**Returns:**
+- Architecture design
+- Implementation code
+- Execution results
+- Test results
+- Code review
+- Final status
 
 ---
 
@@ -370,6 +486,79 @@ DEBUG=1 python /home/ubuntu/ai_orchestrator/mcp_server/server.py
 ### Check Server Logs
 
 Look in Cursor's Output panel (View → Output) and select "MCP" from the dropdown to see server logs.
+
+---
+
+## Execution Tool Troubleshooting
+
+### Issue: `run_project` fails immediately
+
+**Solutions:**
+1. Check project has valid entry point:
+   - Python: `main.py`, `app.py`, or `run.py`
+   - Node.js: Check `package.json` for `main` or `scripts.start`
+   
+2. Verify dependencies are installed:
+   ```
+   @ai-orchestrator fix_issues("/path/to/project")
+   ```
+
+3. Check project type detection:
+   ```
+   @ai-orchestrator run_project("/path/to/project")
+   # Look at "detected_type" in response
+   ```
+
+### Issue: `test_project` doesn't find tests
+
+**Solutions:**
+1. Verify test files exist with correct naming:
+   - Python: `test_*.py` or `*_test.py`
+   - JavaScript: `*.test.js` or `*.spec.js`
+
+2. Check test framework config exists:
+   - Python: `pytest.ini`, `setup.cfg`, or `pyproject.toml`
+   - JavaScript: `jest.config.js` or in `package.json`
+
+3. Run specific test file:
+   ```
+   @ai-orchestrator test_project("/path/to/project", test_path="tests/")
+   ```
+
+### Issue: `fix_issues` not applying fixes
+
+**Solutions:**
+1. Check confidence threshold - low confidence fixes aren't auto-applied
+2. Run analysis first to understand errors:
+   ```
+   @ai-orchestrator analyze_errors("/path/to/project")
+   ```
+3. Try with explicit strategy:
+   ```
+   @ai-orchestrator fix_issues("/path/to/project", strategy="dependency")
+   ```
+
+### Issue: `verify_project` stuck in loop
+
+**Solutions:**
+1. Loop auto-terminates after 10 cycles by default
+2. Same error 3+ times triggers stop
+3. Check the report for "stuck" indicators
+4. Manual intervention may be needed for:
+   - Logic errors
+   - Architecture issues
+   - External service dependencies
+
+### Issue: Backups not created
+
+**Solutions:**
+1. Check `.backups/` directory exists
+2. Verify write permissions
+3. Backups only created when fixes are applied
+4. Manual backup before major changes:
+   ```bash
+   git commit -am "Before auto-fix"
+   ```
 
 ---
 

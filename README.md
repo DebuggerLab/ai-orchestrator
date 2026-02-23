@@ -7,9 +7,60 @@ A powerful Python CLI tool that intelligently orchestrates multiple AI models fo
 - **Multi-Model Integration**: Seamlessly connects to OpenAI, Anthropic, Google Gemini, and Moonshot AI
 - **Intelligent Task Routing**: Automatically determines the best model for each task type
 - **Task Decomposition**: Breaks complex tasks into subtasks and routes each optimally
+- **Project Execution**: Run and test projects with auto-detection (Python, Node.js, React, etc.)
+- **Auto-Fix System**: Automatically detect, analyze, and fix errors with AI-powered solutions
+- **Verification Loop**: Iterative run → test → fix cycle until all tests pass
 - **Beautiful CLI Output**: Rich formatting with progress indicators and colored output
 - **Error Handling**: Graceful fallback when models are unavailable
 - **Cursor IDE Ready**: Designed to work perfectly from Cursor's integrated terminal
+
+## 🔄 Complete Development Cycle
+
+The AI Orchestrator supports a full development workflow:
+
+```
+PLAN → CODE → RUN → TEST → FIX → VERIFY → REVIEW → DONE
+```
+
+### Quick Start for Full Project Development
+
+```bash
+# In Cursor IDE with MCP:
+
+# 1. Design & Implement
+@ai-orchestrator orchestrate_task("Build a REST API for user management with JWT auth")
+
+# 2. Run project and auto-fix any issues
+@ai-orchestrator verify_project("/path/to/project")
+
+# 3. Review the final code
+@ai-orchestrator orchestrate_task("Review the implementation for security")
+```
+
+### What the Verification Loop Does
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    VERIFICATION LOOP                         │
+├─────────────────────────────────────────────────────────────┤
+│  Cycle 1: RUN → 5 errors → FIX 3 → Progress: 40%           │
+│  Cycle 2: RUN → 2 errors → FIX 1 → Progress: 80%           │
+│  Cycle 3: RUN → 1 error  → FIX 1 → Progress: 100% ✅        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### New Execution & Auto-Fix Tools
+
+| Tool | Purpose | Example |
+|------|---------|---------|
+| `run_project` | Execute any project | `run_project("/path")` |
+| `test_project` | Run test suite | `test_project("/path")` |
+| `analyze_errors` | Deep error analysis | `analyze_errors("/path")` |
+| `fix_issues` | AI-powered auto-fix | `fix_issues("/path")` |
+| `verify_project` | Full fix loop | `verify_project("/path")` |
+| `orchestrate_full_development` | Complete workflow | `orchestrate_full_development("desc", "/path")` |
+
+📚 **See [WORKFLOWS.md](WORKFLOWS.md) for visual workflow diagrams and decision trees.**
 
 ## 🏗️ Model Specializations
 
@@ -211,6 +262,10 @@ Use the Model Context Protocol (MCP) for seamless AI orchestration directly in C
 
 ⚙️ **Settings template:** [`cursor_integration/cursor-settings.json`](cursor_integration/cursor-settings.json)
 
+🔄 **Development workflow:** [`cursor_integration/DEVELOPMENT_WORKFLOW.md`](cursor_integration/DEVELOPMENT_WORKFLOW.md)
+
+📊 **Visual workflows:** [`WORKFLOWS.md`](WORKFLOWS.md)
+
 #### Example Workflows
 
 See complete examples in [`cursor_integration/examples/`](cursor_integration/examples/):
@@ -220,6 +275,15 @@ See complete examples in [`cursor_integration/examples/`](cursor_integration/exa
 | [01_rest_api.md](cursor_integration/examples/01_rest_api.md) | Building a REST API with task breakdown |
 | [02_fullstack_webapp.md](cursor_integration/examples/02_fullstack_webapp.md) | Complex full-stack orchestration |
 | [03_code_review.md](cursor_integration/examples/03_code_review.md) | Security review and refactoring workflow |
+| [04_auto_fix_workflow.md](cursor_integration/examples/04_auto_fix_workflow.md) | Auto-fix common errors |
+| [05_full_development_cycle.md](cursor_integration/examples/05_full_development_cycle.md) | Complete project from idea to working code |
+| [06_debugging_and_testing.md](cursor_integration/examples/06_debugging_and_testing.md) | Debugging and testing strategies |
+
+#### Sample Projects
+
+Practice with intentional bugs:
+- [Node.js project with bugs](cursor_integration/examples/sample_projects/nodejs_buggy/)
+- [Python Flask project with issues](cursor_integration/examples/sample_projects/flask_buggy/)
 
 ---
 

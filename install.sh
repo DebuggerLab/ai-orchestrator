@@ -11,6 +11,23 @@
 # For non-interactive installation, see quick-install.sh
 # ============================================================================
 
+# Ensure script runs with bash (for associative array support)
+# This handles cases where user runs: zsh install.sh or sh install.sh
+if [ -z "$BASH_VERSION" ]; then
+    exec bash "$0" "$@"
+fi
+
+# Ensure bash version 4+ for associative arrays
+if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    echo "Error: This script requires bash version 4.0 or higher."
+    echo "Current bash version: $BASH_VERSION"
+    echo ""
+    echo "On macOS, you can install a newer bash with:"
+    echo "  brew install bash"
+    echo "Then run: /opt/homebrew/bin/bash install.sh"
+    exit 1
+fi
+
 set -e
 
 # ============================================================================

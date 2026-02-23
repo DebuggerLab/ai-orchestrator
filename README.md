@@ -747,48 +747,58 @@ for subtask, response in result.subtask_results:
 
 ## ❓ Troubleshooting
 
-### Model Access Errors (404 Not Found)
+> 📚 **For comprehensive troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
-If you see errors like `404: Model 'gpt-4' not found`, update your `.env` file:
+### Quick Fixes for Common Issues
+
+#### MCP Server Not Starting / Empty Logs
+
+```bash
+# Run in foreground to see errors
+./scripts/start-server.sh --fg
+
+# Check the log file
+tail -f logs/mcp-server.log
+```
+
+#### Xcode Extension Build Error: "No such module 'XcodeKit'"
+
+```bash
+# Use the build script (not swift build)
+cd xcode_extension
+./Scripts/build.sh --generate
+```
+
+XcodeKit is only available in Xcode projects, not Swift Package Manager.
+
+#### Model Access Errors (404 Not Found)
+
+Update your `.env` file with current model names:
 
 ```env
-# Use these current model names
 OPENAI_MODEL=gpt-4o-mini
 ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 ```
 
-### Common Model Errors
+### Common Error Reference
 
-| Error | Provider | Solution |
-|-------|----------|----------|
-| `404 model not found` | OpenAI | Use `gpt-4o-mini` instead of `gpt-4` |
-| `404 model not found` | Gemini | Use `gemini-2.5-flash` |
-| `invalid_api_key` | Any | Regenerate API key in provider console |
-| `insufficient_quota` | OpenAI | Add billing to your OpenAI account |
-| `rate_limit_exceeded` | Any | Wait and retry, or upgrade API tier |
-
-### API Key Issues
-
-1. **Check your `.env` file exists** in the project directory
-2. **Verify API key format**:
-   - OpenAI: Starts with `sk-`
-   - Anthropic: Starts with `sk-ant-`
-   - Gemini: Alphanumeric string
-3. **Run status check**: `ai-orchestrator status`
-
-### IDE-Specific Troubleshooting
-
-- **Cursor issues**: See [Troubleshooting Cursor Connection](#troubleshooting-cursor-connection)
-- **Xcode issues**: See [Troubleshooting Xcode Extension](#troubleshooting-xcode-extension)
+| Error | Likely Cause | Quick Solution |
+|-------|--------------|----------------|
+| `ModuleNotFoundError: 'mcp'` | Missing dependency | `pip install mcp` |
+| `no such module 'XcodeKit'` | Using SPM | Use `./Scripts/build.sh --generate` |
+| `404 model not found` | Outdated model name | Update model in `.env` |
+| `Connection refused` | Server not running | `./scripts/start-server.sh` |
+| `Logs are empty` | Normal for MCP | Check `logs/mcp-server.log` |
 
 ### Getting Help
 
-- 📖 See [MODELS.md](MODELS.md) for detailed model information
-- 🖥️ See [cursor_integration/CURSOR_SETUP.md](cursor_integration/CURSOR_SETUP.md) for Cursor help
-- 📱 See [macos_app/AI Orchestrator Manager/TROUBLESHOOTING.md](macos_app/AI%20Orchestrator%20Manager/TROUBLESHOOTING.md) for Xcode help
-- 🐛 Report issues on GitHub
+- 📖 **Full troubleshooting guide**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- 📚 **Model reference**: [MODELS.md](MODELS.md)
+- 🖥️ **Cursor setup**: [cursor_integration/CURSOR_SETUP.md](cursor_integration/CURSOR_SETUP.md)
+- 📱 **Xcode extension**: [xcode_extension/README.md](xcode_extension/README.md)
+- 🐛 **Report issues** on GitHub
 
 ---
 

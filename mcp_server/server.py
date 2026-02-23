@@ -16,12 +16,46 @@ import asyncio
 import json
 import sys
 import os
+import logging
 from pathlib import Path
 from typing import Any, Optional, Dict, List
 from datetime import datetime
 
 # Add parent directory to path for importing ai_orchestrator modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+# MCP servers use stdio for communication, so we need file-based logging
+
+def setup_logging():
+    """Setup file-based logging for the MCP server."""
+    log_dir = Path(__file__).parent.parent / "logs"
+    log_dir.mkdir(exist_ok=True)
+    
+    log_file = log_dir / "mcp-server.log"
+    
+    # Configure logging to file only (not stdout which is used by MCP protocol)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file, mode='a'),
+        ]
+    )
+    
+    # Also capture warnings
+    logging.captureWarnings(True)
+    
+    return logging.getLogger("mcp_server")
+
+# Initialize logger immediately
+logger = setup_logging()
+logger.info("=" * 60)
+logger.info("MCP Server Starting...")
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Working directory: {os.getcwd()}")
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -752,6 +786,8 @@ async def list_tools() -> list[Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
     """Handle tool calls from MCP clients."""
+    logger.info(f"Tool called: {name}")
+    logger.debug(f"Tool arguments: {arguments}")
     
     try:
         # Original tools
@@ -1959,13 +1995,37 @@ async def handle_reset_ios_simulator(arguments: dict[str, Any]) -> list[TextCont
 
 async def main():
     """Main entry point for the MCP server."""
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
+    logger.info("Starting MCP stdio server...")
+    
+    try:
+        # Log environment info
+        env_path = Path(__file__).parent.parent / ".env"
+        logger.info(f".env file exists: {env_path.exists()}")
+        
+        config = get_config()
+        available_models = config.get_available_models()
+        logger.info(f"Available models: {available_models}")
+        logger.info(f"Total tools registered: {len(await list_tools())}")
+        
+        async with stdio_server() as (read_stream, write_stream):
+            logger.info("MCP server running - waiting for connections...")
+            await app.run(
+                read_stream,
+                write_stream,
+                app.create_initialization_options()
+            )
+    except Exception as e:
+        logger.exception(f"Fatal error in MCP server: {e}")
+        raise
+    finally:
+        logger.info("MCP server shutting down")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("MCP server interrupted by user")
+    except Exception as e:
+        logger.exception(f"MCP server crashed: {e}")
+        sys.exit(1)

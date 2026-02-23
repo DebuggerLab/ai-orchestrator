@@ -84,6 +84,80 @@ class ExecutionConfig(BaseModel):
     )
 
 
+class AutoFixConfig(BaseModel):
+    """Configuration for auto-fix and verification loop.
+    
+    Controls the behavior of the automatic error fixing system.
+    """
+    # Fix attempt limits
+    max_fix_attempts: int = Field(
+        default=5,
+        description="Maximum number of fix attempts per error"
+    )
+    max_same_error_attempts: int = Field(
+        default=3,
+        description="Maximum attempts to fix the same error before giving up"
+    )
+    max_verification_cycles: int = Field(
+        default=10,
+        description="Maximum number of run-fix-rerun cycles"
+    )
+    
+    # Confidence thresholds
+    fix_confidence_threshold: float = Field(
+        default=0.7,
+        description="Minimum confidence (0.0-1.0) to apply a fix"
+    )
+    ai_fix_confidence_threshold: float = Field(
+        default=0.6,
+        description="Minimum confidence for AI-generated fixes"
+    )
+    
+    # Safety features
+    enable_auto_backup: bool = Field(
+        default=True,
+        description="Create backups before applying fixes"
+    )
+    fix_validation_enabled: bool = Field(
+        default=True,
+        description="Validate fixes before applying them"
+    )
+    allow_destructive_fixes: bool = Field(
+        default=False,
+        description="Allow fixes that delete files (requires backup)"
+    )
+    
+    # AI model preferences for fixing
+    preferred_fix_model: str = Field(
+        default="anthropic",
+        description="Preferred AI model for code fixes (anthropic/openai/gemini)"
+    )
+    preferred_analysis_model: str = Field(
+        default="openai",
+        description="Preferred AI model for error analysis"
+    )
+    
+    # Loop behavior
+    run_tests_in_loop: bool = Field(
+        default=True,
+        description="Run tests as part of verification loop"
+    )
+    stop_on_regression: bool = Field(
+        default=True,
+        description="Stop if error count increases"
+    )
+    
+    # Backup settings
+    backup_retention_count: int = Field(
+        default=5,
+        description="Number of recent backups to keep"
+    )
+    backup_dir: Optional[str] = Field(
+        default=None,
+        description="Custom backup directory (default: project/.auto_fixer_backups)"
+    )
+
+
 class Config(BaseModel):
     """Main configuration class."""
     openai_api_key: Optional[str] = None
@@ -92,6 +166,7 @@ class Config(BaseModel):
     moonshot_api_key: Optional[str] = None
     models: ModelConfig = Field(default_factory=ModelConfig)
     execution: ExecutionConfig = Field(default_factory=ExecutionConfig)
+    auto_fix: AutoFixConfig = Field(default_factory=AutoFixConfig)
     
     @classmethod
     def load(cls, env_path: Optional[Path] = None) -> "Config":
@@ -118,6 +193,9 @@ class Config(BaseModel):
                 return default
             return val.lower() in ('true', '1', 'yes')
         
+        def get_str(key: str, default: str) -> str:
+            return os.getenv(key, default)
+        
         return cls(
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
@@ -140,6 +218,22 @@ class Config(BaseModel):
                 graceful_shutdown_timeout=get_int("GRACEFUL_SHUTDOWN_TIMEOUT", 5),
                 auto_detect_ports=get_bool("AUTO_DETECT_PORTS", True),
                 default_port=get_int("DEFAULT_PORT", 3000),
+            ),
+            auto_fix=AutoFixConfig(
+                max_fix_attempts=get_int("MAX_FIX_ATTEMPTS", 5),
+                max_same_error_attempts=get_int("MAX_SAME_ERROR_ATTEMPTS", 3),
+                max_verification_cycles=get_int("MAX_VERIFICATION_CYCLES", 10),
+                fix_confidence_threshold=get_float("FIX_CONFIDENCE_THRESHOLD", 0.7),
+                ai_fix_confidence_threshold=get_float("AI_FIX_CONFIDENCE_THRESHOLD", 0.6),
+                enable_auto_backup=get_bool("ENABLE_AUTO_BACKUP", True),
+                fix_validation_enabled=get_bool("FIX_VALIDATION_ENABLED", True),
+                allow_destructive_fixes=get_bool("ALLOW_DESTRUCTIVE_FIXES", False),
+                preferred_fix_model=get_str("PREFERRED_FIX_MODEL", "anthropic"),
+                preferred_analysis_model=get_str("PREFERRED_ANALYSIS_MODEL", "openai"),
+                run_tests_in_loop=get_bool("RUN_TESTS_IN_LOOP", True),
+                stop_on_regression=get_bool("STOP_ON_REGRESSION", True),
+                backup_retention_count=get_int("BACKUP_RETENTION_COUNT", 5),
+                backup_dir=os.getenv("AUTO_FIX_BACKUP_DIR"),
             ),
         )
     

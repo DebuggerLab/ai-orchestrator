@@ -15,12 +15,41 @@ from .project_types import (
     GenericProject,
     detect_project_type,
 )
+from .auto_fixer import (
+    AutoFixer,
+    AnalysisResult,
+    GeneratedFix,
+    FixAttempt,
+    FixConfidence,
+)
+from .verification_loop import (
+    VerificationLoop,
+    LoopReport,
+    LoopStatus,
+    LoopProgress,
+    CycleResult,
+    ProgressTrend,
+)
+from .fix_strategies import (
+    FixStrategy,
+    FixResult,
+    FixType,
+    FixStrategyRegistry,
+    FixerCollection,
+    DependencyFixer,
+    PortFixer,
+    PermissionFixer,
+    ConfigurationFixer,
+    SyntaxFixer,
+)
 
 __all__ = [
     # Main classes
     "ProjectRunner",
     "ErrorDetector",
     "TestExecutor",
+    "AutoFixer",
+    "VerificationLoop",
     # Result types
     "ExecutionResult",
     "ExecutionStatus",
@@ -30,6 +59,28 @@ __all__ = [
     "TestFramework",
     "TestStatus",
     "ProjectConfig",
+    # Auto-fixer types
+    "AnalysisResult",
+    "GeneratedFix",
+    "FixAttempt",
+    "FixConfidence",
+    # Verification loop types
+    "LoopReport",
+    "LoopStatus",
+    "LoopProgress",
+    "CycleResult",
+    "ProgressTrend",
+    # Fix strategy types
+    "FixStrategy",
+    "FixResult",
+    "FixType",
+    "FixStrategyRegistry",
+    "FixerCollection",
+    "DependencyFixer",
+    "PortFixer",
+    "PermissionFixer",
+    "ConfigurationFixer",
+    "SyntaxFixer",
     # Project handlers
     "BaseProjectHandler",
     "NodeJSProject",

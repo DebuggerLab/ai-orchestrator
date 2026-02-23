@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>AI Orchestrator for Xcode</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.debuggerlab.ai-orchestrator-xcode</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>AI Orchestrator</string>
+    <key>CFBundlePackageType</key>
+    <string>XPC!</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionAttributes</key>
+        <dict>
+            <key>XCSourceEditorCommandDefinitions</key>
+            <array>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).FixCodeCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.fix-code</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Fix Code Issues</string>
+                </dict>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).ExplainCodeCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.explain-code</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Explain Code</string>
+                </dict>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).GenerateTestsCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.generate-tests</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Generate Tests</string>
+                </dict>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).RefactorCodeCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.refactor-code</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Refactor Code</string>
+                </dict>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).GenerateDocsCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.generate-docs</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Generate Documentation</string>
+                </dict>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).BuildAndFixCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.build-and-fix</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Build and Fix</string>
+                </dict>
+                <dict>
+                    <key>XCSourceEditorCommandClassName</key>
+                    <string>$(PRODUCT_MODULE_NAME).SettingsCommand</string>
+                    <key>XCSourceEditorCommandIdentifier</key>
+                    <string>com.debuggerlab.ai-orchestrator-xcode.settings</string>
+                    <key>XCSourceEditorCommandName</key>
+                    <string>Settings</string>
+                </dict>
+            </array>
+            <key>XCSourceEditorExtensionPrincipalClass</key>
+            <string>$(PRODUCT_MODULE_NAME).SourceEditorExtension</string>
+        </dict>
+        <key>NSExtensionPointIdentifier</key>
+        <string>com.apple.dt.Xcode.extension.source-editor</string>
+    </dict>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 DebuggerLab. All rights reserved.</string>
+</dict>
+</plist>

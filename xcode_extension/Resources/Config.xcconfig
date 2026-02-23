@@ -1,0 +1,19 @@
+// Configuration settings for AI Orchestrator Xcode Extension
+// Used by Swift Package Manager for Xcode project generation
+
+// Bundle identifier
+PRODUCT_BUNDLE_IDENTIFIER = com.debuggerlab.ai-orchestrator-xcode
+
+// Deployment target
+MACOSX_DEPLOYMENT_TARGET = 13.0
+
+// Swift version
+SWIFT_VERSION = 5.9
+
+// Extension settings
+INFOPLIST_FILE = Resources/Info.plist
+CODE_SIGN_ENTITLEMENTS = Resources/AI_Orchestrator_Xcode.entitlements
+
+// Build settings
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+ENABLE_BITCODE = NO

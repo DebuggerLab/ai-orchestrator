@@ -1103,18 +1103,39 @@ setup_mcp_server() {
 setup_cursor_integration() {
     print_step "Configuring Cursor IDE Integration"
     
-    local cursor_config_dir="$HOME/Library/Application Support/Cursor/User"
-    local mcp_config_file="$cursor_config_dir/globalStorage/mcp-settings.json"
+    # IMPORTANT: Cursor now uses ~/.cursor/mcp.json for MCP configuration
+    # NOT ~/Library/Application Support/Cursor/User/... which was deprecated
+    local cursor_config_dir="$HOME/.cursor"
+    local mcp_config_file="$cursor_config_dir/mcp.json"
+    local backup_dir="$cursor_config_dir/backups"
     
-    # Create directory if needed
-    mkdir -p "$cursor_config_dir/globalStorage"
+    # Create directories if needed
+    mkdir -p "$cursor_config_dir"
+    mkdir -p "$backup_dir"
+    
+    # Detect Python command (prefer venv)
+    local python_cmd
+    if [ -f "$INSTALL_DIR/venv/bin/python" ]; then
+        python_cmd="$INSTALL_DIR/venv/bin/python"
+    elif [ -f "$INSTALL_DIR/venv/bin/python3" ]; then
+        python_cmd="$INSTALL_DIR/venv/bin/python3"
+    elif command -v python3 &>/dev/null; then
+        python_cmd="python3"
+    else
+        python_cmd="python"
+    fi
+    
+    print_info "Using Python: $python_cmd"
     
     # Generate Cursor MCP configuration
     local mcp_config='{
   "mcpServers": {
     "ai-orchestrator": {
-      "command": "'"$INSTALL_DIR"'/venv/bin/python",
-      "args": ["-m", "mcp_server.server"],
+      "command": "'"$python_cmd"'",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
       "cwd": "'"$INSTALL_DIR"'",
       "env": {
         "PYTHONPATH": "'"$INSTALL_DIR"'"
@@ -1125,12 +1146,26 @@ setup_cursor_integration() {
     
     # Backup existing config
     if [ -f "$mcp_config_file" ]; then
-        cp "$mcp_config_file" "$mcp_config_file.backup.$(date +%Y%m%d_%H%M%S)"
-        print_info "Backed up existing Cursor MCP configuration"
+        local backup_file="$backup_dir/mcp.json.backup.$(date +%Y%m%d_%H%M%S)"
+        cp "$mcp_config_file" "$backup_file"
+        print_info "Backed up existing config to: $backup_file"
     fi
     
     echo "$mcp_config" > "$mcp_config_file"
-    print_success "Cursor MCP configuration created"
+    print_success "Cursor MCP configuration created at: $mcp_config_file"
+    
+    # Verify JSON is valid
+    if python3 -c "import json; json.load(open('$mcp_config_file'))" 2>/dev/null; then
+        print_success "Configuration JSON validated"
+    else
+        print_warning "Could not validate JSON - please check the configuration"
+    fi
+    
+    # Display the configuration
+    print_info "Configuration contents:"
+    echo ""
+    cat "$mcp_config_file" | sed 's/^/    /'
+    echo ""
     
     # Copy .cursorrules to home directory
     if [ -f "$INSTALL_DIR/cursor_integration/.cursorrules" ]; then
@@ -1138,8 +1173,24 @@ setup_cursor_integration() {
         print_success "Cursor rules file installed"
     fi
     
+    # Print verification instructions
     print_info "Cursor integration configured"
-    print_info "Restart Cursor IDE to apply changes"
+    echo ""
+    echo -e "  ${WHITE}To verify MCP is working in Cursor:${NC}"
+    echo -e "  1. ${BOLD}Completely quit Cursor${NC} (Cmd+Q on Mac)"
+    echo -e "  2. ${BOLD}Reopen Cursor${NC}"
+    echo -e "  3. Open Settings (${WHITE}Cmd+,${NC}) → Tools & Integrations"
+    echo -e "  4. Look for ${GREEN}ai-orchestrator${NC} with a ${GREEN}green dot${NC} under MCP Tools"
+    echo -e "  5. In Chat, select ${WHITE}Agent${NC} mode to see available tools"
+    echo ""
+    
+    # Check for deprecated config location and warn
+    local old_mcp_settings="$HOME/Library/Application Support/Cursor/User/globalStorage/mcp-settings.json"
+    if [ -f "$old_mcp_settings" ]; then
+        print_warning "Found deprecated config at old location (not used by Cursor anymore):"
+        print_info "$old_mcp_settings"
+        print_info "The new config at ~/.cursor/mcp.json will be used instead"
+    fi
     
     STEPS_COMPLETED+=("cursor_integration")
 }
@@ -1400,13 +1451,28 @@ except Exception as e:
     
     # Test Cursor integration
     print_progress "Verifying Cursor integration"
-    local cursor_config="$HOME/Library/Application Support/Cursor/User/globalStorage/mcp-settings.json"
+    local cursor_config="$HOME/.cursor/mcp.json"
     if [ -f "$cursor_config" ]; then
-        print_success "Cursor MCP configuration exists"
+        print_success "Cursor MCP configuration exists at: $cursor_config"
         echo "✓ Cursor Config: OK" >> "$report_file"
+        
+        # Validate JSON
+        if python3 -c "import json; json.load(open('$cursor_config'))" 2>/dev/null; then
+            print_success "Cursor MCP configuration is valid JSON"
+        else
+            print_warning "Cursor MCP configuration may have JSON errors"
+        fi
+        
+        # Check for ai-orchestrator entry
+        if grep -q "ai-orchestrator" "$cursor_config" 2>/dev/null; then
+            print_success "ai-orchestrator entry found in config"
+        else
+            print_warning "ai-orchestrator entry NOT found in config"
+        fi
     else
         print_warning "Cursor MCP configuration not found"
         echo "○ Cursor Config: NOT FOUND" >> "$report_file"
+        print_info "Run the fix script: $INSTALL_DIR/cursor_integration/fix_cursor_mcp.sh"
     fi
     
     # Run test script if available

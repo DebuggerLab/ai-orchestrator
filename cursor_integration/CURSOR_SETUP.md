@@ -120,55 +120,95 @@ Press `Ctrl+C` to stop.
 
 ### Step 3: Configure Cursor IDE
 
-#### Option A: Using the Settings UI
+Cursor uses a dedicated `mcp.json` file for MCP configuration (NOT settings.json).
 
-1. Open Cursor IDE
-2. Press `Cmd+,` (Mac) or `Ctrl+,` (Windows/Linux) to open Settings
-3. Search for "MCP" in the settings search bar
-4. Click "Edit in settings.json" under MCP Servers
-5. Add the AI Orchestrator configuration (see Step 4)
+#### Option A: Run the Fix Script (Recommended)
 
-#### Option B: Edit settings.json Directly
+The easiest way to configure Cursor:
 
-1. Open Cursor IDE
-2. Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux)
-3. Type "Open Settings (JSON)" and select it
-4. Add the MCP server configuration
+```bash
+cd /path/to/ai_orchestrator
+./cursor_integration/fix_cursor_mcp.sh
+```
+
+This automatically creates the correct configuration.
+
+#### Option B: Manual Configuration
+
+Create/edit `~/.cursor/mcp.json`:
+
+```bash
+# Create directory if needed
+mkdir -p ~/.cursor
+
+# Create or edit mcp.json
+nano ~/.cursor/mcp.json
+```
 
 ### Step 4: Add MCP Server Configuration
 
-Add this to your Cursor `settings.json`:
+Add this content to `~/.cursor/mcp.json`:
 
+**For macOS users:**
 ```json
 {
   "mcpServers": {
     "ai-orchestrator": {
-      "command": "python",
-      "args": ["/home/ubuntu/ai_orchestrator/mcp_server/server.py"],
+      "command": "/Users/yourname/ai-orchestrator/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "cwd": "/Users/yourname/ai-orchestrator",
+      "env": {
+        "PYTHONPATH": "/Users/yourname/ai-orchestrator"
+      }
+    }
+  }
+}
+```
+
+Replace `/Users/yourname` with your actual home directory path.
+
+**For Linux users:**
+```json
+{
+  "mcpServers": {
+    "ai-orchestrator": {
+      "command": "/home/ubuntu/ai_orchestrator/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "cwd": "/home/ubuntu/ai_orchestrator",
       "env": {
         "PYTHONPATH": "/home/ubuntu/ai_orchestrator"
-      },
-      "cwd": "/home/ubuntu/ai_orchestrator/mcp_server"
+      }
     }
   }
 }
 ```
 
-**For Windows users**, adjust paths:
+**For Windows users:**
 ```json
 {
   "mcpServers": {
     "ai-orchestrator": {
-      "command": "python",
-      "args": ["C:\\path\\to\\ai_orchestrator\\mcp_server\\server.py"],
+      "command": "C:\\Users\\YourName\\ai_orchestrator\\venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "mcp_server.server"
+      ],
+      "cwd": "C:\\Users\\YourName\\ai_orchestrator",
       "env": {
-        "PYTHONPATH": "C:\\path\\to\\ai_orchestrator"
-      },
-      "cwd": "C:\\path\\to\\ai_orchestrator\\mcp_server"
+        "PYTHONPATH": "C:\\Users\\YourName\\ai_orchestrator"
+      }
     }
   }
 }
 ```
+
+> **Note:** If you don't have a virtual environment, replace the Python path with `python3` (Mac/Linux) or `python` (Windows).
 
 ### Step 5: Restart Cursor
 
@@ -180,34 +220,54 @@ Add this to your Cursor `settings.json`:
 
 ## Verifying the Connection
 
-### Check MCP Server Status
+### Check MCP Server Status in Settings
 
-1. Open Cursor's Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-2. Type "MCP: Show Tools" or look for MCP-related commands
-3. You should see the AI Orchestrator tools listed:
+1. Open Cursor Settings: `Cmd+,` (Mac) or `Ctrl+,` (Windows/Linux)
+2. Navigate to **Tools & Integrations** in the left sidebar
+3. Look for the **MCP Tools** section
+4. You should see **ai-orchestrator** with a **green dot** ✅
+
+If you see a red dot or no entry, run the diagnostic script:
+```bash
+./cursor_integration/diagnose_cursor_mcp.sh
+```
+
+### Check Available Tools in Chat
+
+1. Open the Chat panel: `Cmd+L` (Mac) or `Ctrl+L` (Windows/Linux)
+2. At the top, click the mode dropdown and select **Agent**
+3. Click the **gear icon ⚙️** or **Available Tools** 
+4. You should see AI Orchestrator tools listed:
    - `orchestrate_task`
    - `analyze_task`
    - `check_status`
    - `route_to_model`
    - `get_available_models`
+   - `run_project`
+   - `test_project`
+   - `analyze_errors`
+   - `fix_issues`
+   - `verify_project`
+   - `orchestrate_full_development`
 
 ### Test with a Simple Query
 
-In Cursor's chat or composer, try:
+In Cursor's chat (Agent mode), try:
 
 ```
-@ai-orchestrator analyze_task("Create a Python function to parse JSON files")
+Analyze this task: Create a Python function to parse JSON files
 ```
 
-You should receive a response showing:
-- Detected task type (coding)
-- Recommended model (Claude)
-- Suggested subtasks
+The agent will automatically use MCP tools when appropriate. You should see:
+- Tool calls appear in the chat
+- Task analysis results
+- Model recommendations
 
 ### Verify Model Availability
 
+Ask in Agent mode:
 ```
-@ai-orchestrator check_status()
+Check the status of available AI models
 ```
 
 This shows which AI models are configured and available.

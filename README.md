@@ -284,7 +284,7 @@ If you see errors like `404: Model 'gpt-4' not found` or `404: Model 'gemini-pro
 # Use these current model names
 OPENAI_MODEL=gpt-4o-mini
 ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.0-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 ```
 
@@ -293,7 +293,7 @@ MOONSHOT_MODEL=moonshot-v1-8k
 | Error | Provider | Solution |
 |-------|----------|----------|
 | `404 model not found` | OpenAI | Use `gpt-4o-mini` instead of `gpt-4` |
-| `404 model not found` | Gemini | Use `gemini-1.5-flash` instead of `gemini-pro` |
+| `404 model not found` | Gemini | Use `gemini-2.0-flash` (gemini-1.5-flash was deprecated Sep 2025) |
 | `invalid_api_key` | Any | Regenerate API key in provider console |
 | `insufficient_quota` | OpenAI | Add billing to your OpenAI account |
 | `rate_limit_exceeded` | Any | Wait and retry, or upgrade API tier |

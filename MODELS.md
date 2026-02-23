@@ -8,7 +8,7 @@ This document provides detailed information about available models for each AI p
 |----------|--------------|-----------------|--------------|
 | OpenAI | `gpt-4o-mini` | Architecture, Planning | Standard API |
 | Anthropic | `claude-3-5-sonnet-20241022` | Coding, Implementation | Standard API |
-| Google | `gemini-1.5-flash` | Reasoning, Analysis | Standard API |
+| Google | `gemini-2.0-flash` | Reasoning, Analysis | Standard API |
 | Moonshot | `moonshot-v1-8k` | Code Review | Standard API |
 
 ---
@@ -103,23 +103,23 @@ ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
 | Model | Context Window | Speed | Cost | Access |
 |-------|---------------|-------|------|--------|
-| `gemini-1.5-flash` ⭐ | 1M | Very Fast | $ | Standard |
-| `gemini-1.5-pro` | 2M | Medium | $$ | Standard |
-| `gemini-2.0-flash-exp` | 1M | Fast | $ | Experimental |
+| `gemini-2.0-flash` ⭐ | 1M | Very Fast | $ | Standard |
+| `gemini-2.5-flash` | 1M | Very Fast | $ | Standard |
+| `gemini-1.5-pro-002` | 2M | Medium | $$ | Standard |
 
 ⭐ = Default/Recommended
 
 ### Model Selection Guide
 
-- **`gemini-1.5-flash`** (Default): Fast and capable. Best for most reasoning tasks.
-- **`gemini-1.5-pro`**: Largest context window. Use for complex analysis requiring lots of context.
-- **`gemini-2.0-flash-exp`**: Experimental next-gen model. May have limited availability.
+- **`gemini-2.0-flash`** (Default): Current stable fast model. Best for most reasoning tasks.
+- **`gemini-2.5-flash`**: Latest flash model with improved capabilities.
+- **`gemini-1.5-pro-002`**: Largest context window. Use for complex analysis requiring lots of context.
 
 ### Configuration
 
 ```env
 # In your .env file
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.0-flash
 ```
 
 ### Access Requirements
@@ -132,15 +132,33 @@ GEMINI_MODEL=gemini-1.5-flash
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `404 model not found` | Old model name (e.g., `gemini-pro`) | Use `gemini-1.5-flash` instead |
+| `404 model not found` | Old/deprecated model name | Use `gemini-2.0-flash` instead |
 | `API_KEY_INVALID` | Wrong key type | Use AI Studio key, not GCP key |
 | `RESOURCE_EXHAUSTED` | Rate limit hit | Wait or upgrade to paid tier |
 
-### ⚠️ Deprecated Models
+### ⚠️ Deprecated Models (Will Return 404 Errors)
 
 The following models have been deprecated and will return 404 errors:
-- `gemini-pro` → Use `gemini-1.5-flash` instead
-- `gemini-pro-vision` → Use `gemini-1.5-flash` instead
+- `gemini-pro` → Use `gemini-2.0-flash` instead
+- `gemini-pro-vision` → Use `gemini-2.0-flash` instead
+- `gemini-1.5-flash` (deprecated Sep 24, 2025) → Use `gemini-2.0-flash` instead
+- `gemini-1.5-pro` (deprecated Sep 24, 2025) → Use `gemini-1.5-pro-002` instead
+
+### 💡 Model Name Format
+
+Google Gemini models use simple names without prefixes:
+- ✅ Correct: `gemini-2.0-flash`
+- ❌ Wrong: `models/gemini-2.0-flash` (don't include the "models/" prefix)
+- ❌ Wrong: `gemini/gemini-2.0-flash` (don't include redundant prefixes)
+
+To list available models programmatically:
+```python
+import google.generativeai as genai
+genai.configure(api_key='YOUR_API_KEY')
+for m in genai.list_models():
+    if 'generateContent' in m.supported_generation_methods:
+        print(m.name)
+```
 
 ---
 
@@ -191,7 +209,7 @@ OPENAI_MODEL=gpt-4o
 ANTHROPIC_MODEL=claude-3-opus-20240229
 
 # Change Gemini model
-GEMINI_MODEL=gemini-1.5-pro
+GEMINI_MODEL=gemini-2.5-flash
 
 # Change Moonshot model
 MOONSHOT_MODEL=moonshot-v1-32k
@@ -201,7 +219,7 @@ MOONSHOT_MODEL=moonshot-v1-32k
 
 ```bash
 export OPENAI_MODEL=gpt-4o
-export GEMINI_MODEL=gemini-1.5-pro
+export GEMINI_MODEL=gemini-2.0-flash
 ```
 
 ### Method 3: Programmatic
@@ -211,7 +229,7 @@ from ai_orchestrator.config import Config, ModelConfig
 
 config = Config.load()
 config.models.openai_model = "gpt-4o"
-config.models.gemini_model = "gemini-1.5-pro"
+config.models.gemini_model = "gemini-2.0-flash"
 ```
 
 ---
@@ -222,8 +240,8 @@ config.models.gemini_model = "gemini-1.5-pro"
 
 | Tier | Models | Typical Use Case |
 |------|--------|------------------|
-| $ (Low) | gpt-4o-mini, claude-3-5-haiku, gemini-1.5-flash | Development, testing |
-| $$ (Medium) | claude-3-5-sonnet, gemini-1.5-pro | Production workloads |
+| $ (Low) | gpt-4o-mini, claude-3-5-haiku, gemini-2.0-flash | Development, testing |
+| $$ (Medium) | claude-3-5-sonnet, gemini-1.5-pro-002 | Production workloads |
 | $$$ (High) | gpt-4o, gpt-4-turbo | High-value tasks |
 | $$$$ (Premium) | claude-3-opus | Critical implementations |
 
@@ -243,14 +261,34 @@ config.models.gemini_model = "gemini-1.5-pro"
 This usually means the model name is incorrect or deprecated.
 
 **Common causes:**
-- Using old model names (e.g., `gpt-4`, `gemini-pro`)
+- Using old model names (e.g., `gpt-4`, `gemini-pro`, `gemini-1.5-flash`)
 - Typos in model name
 - Model was sunset by provider
+- Using wrong model name format (e.g., `models/gemini-2.0-flash` instead of `gemini-2.0-flash`)
 
 **Solution:**
 1. Check the exact model name in this document
 2. Update your `.env` file with the correct name
 3. Restart your application
+
+### Gemini-Specific 404 Errors
+
+If you see an error like:
+```
+404 models/gemini-1.5-flash is not found for API version v1beta
+```
+
+This means the model is deprecated. **Update to `gemini-2.0-flash`:**
+
+```env
+# In your .env file
+GEMINI_MODEL=gemini-2.0-flash
+```
+
+**Deprecated Gemini models (as of Sep 2025):**
+- `gemini-pro` → use `gemini-2.0-flash`
+- `gemini-1.5-flash` → use `gemini-2.0-flash`
+- `gemini-1.5-pro` → use `gemini-1.5-pro-002`
 
 ### "Access Denied" / "Insufficient Permissions"
 
@@ -277,5 +315,6 @@ This usually means the model name is incorrect or deprecated.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1.0 | Feb 2026 | Updated Gemini default to gemini-2.0-flash (gemini-1.5-flash deprecated) |
 | 2.0.0 | Feb 2026 | Updated defaults: gpt-4o-mini, gemini-1.5-flash |
 | 1.0.0 | Initial | Original defaults: gpt-4, gemini-pro (now deprecated) |

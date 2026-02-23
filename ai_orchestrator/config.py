@@ -13,12 +13,12 @@ class ModelConfig(BaseModel):
     Default models are chosen for accessibility and cost-effectiveness:
     - gpt-4o-mini: Fast, affordable, widely accessible OpenAI model
     - claude-3-5-sonnet: Best balance of capability and availability
-    - gemini-1.5-flash: Fast and accessible Google model
+    - gemini-2.0-flash: Current stable Google model (gemini-1.5-flash deprecated Sep 2025)
     - moonshot-v1-8k: Standard Moonshot model
     """
     openai_model: str = Field(default="gpt-4o-mini")
     anthropic_model: str = Field(default="claude-3-5-sonnet-20241022")
-    gemini_model: str = Field(default="gemini-1.5-flash")
+    gemini_model: str = Field(default="gemini-2.0-flash")
     moonshot_model: str = Field(default="moonshot-v1-8k")
 
 
@@ -48,7 +48,7 @@ class Config(BaseModel):
             models=ModelConfig(
                 openai_model=os.getenv("OPENAI_MODEL", os.getenv("DEFAULT_ARCHITECTURE_MODEL", "gpt-4o-mini")),
                 anthropic_model=os.getenv("ANTHROPIC_MODEL", os.getenv("DEFAULT_CODING_MODEL", "claude-3-5-sonnet-20241022")),
-                gemini_model=os.getenv("GEMINI_MODEL", os.getenv("DEFAULT_REASONING_MODEL", "gemini-1.5-flash")),
+                gemini_model=os.getenv("GEMINI_MODEL", os.getenv("DEFAULT_REASONING_MODEL", "gemini-2.0-flash")),
                 moonshot_model=os.getenv("MOONSHOT_MODEL", os.getenv("DEFAULT_REVIEW_MODEL", "moonshot-v1-8k")),
             )
         )

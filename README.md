@@ -65,7 +65,7 @@ Get up and running in under a minute with one command!
 
 ```bash
 # Clone and install everything automatically
-git clone https://github.com/dipcse07/ai-orchestrator.git && cd ai-orchestrator && ./install.sh
+git clone https://github.com/DebuggerLab/ai-orchestrator.git && cd ai-orchestrator && ./install.sh
 ```
 
 Or if you already have the repository:

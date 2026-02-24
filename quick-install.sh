@@ -119,7 +119,7 @@ else
     if [ -d ".git" ]; then
         git pull origin main 2>/dev/null || git pull origin master 2>/dev/null || true
     else
-        git clone https://github.com/dipcse07/ai-orchestrator.git . 2>/dev/null || true
+        git clone https://github.com/DebuggerLab/ai-orchestrator.git . 2>/dev/null || true
     fi
 fi
 print_status "Repository ready"

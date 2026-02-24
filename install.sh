@@ -38,7 +38,7 @@ MIN_MACOS_VERSION="12.0"
 MIN_PYTHON_VERSION="3.11"
 DEFAULT_INSTALL_DIR="$HOME/ai-orchestrator"
 DEFAULT_MCP_PORT="3000"
-REPO_URL="https://github.com/dipcse07/ai-orchestrator.git"
+REPO_URL="https://github.com/DebuggerLab/ai-orchestrator.git"
 LOG_FILE="/tmp/ai-orchestrator-install.log"
 BACKUP_DIR="/tmp/ai-orchestrator-backup-$(date +%Y%m%d_%H%M%S)"
 

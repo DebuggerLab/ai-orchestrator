@@ -953,6 +953,341 @@ prompt_yes_no() {
 }
 
 # ============================================================================
+# API Key Validation Functions
+# ============================================================================
+
+# Track API key configuration status
+declare -A API_KEY_STATUS
+
+# Validate API key format
+# Usage: validate_api_key_format "service_name" "key_value"
+# Returns: 0 if valid, 1 if invalid
+validate_api_key_format() {
+    local service="$1"
+    local key="$2"
+    local min_length=32
+    
+    # Check if key is empty
+    if [ -z "$key" ]; then
+        return 1
+    fi
+    
+    # Check minimum length (most API keys are 40+ characters)
+    if [ ${#key} -lt $min_length ]; then
+        return 2
+    fi
+    
+    # Service-specific format validation
+    case "$service" in
+        "openai")
+            # OpenAI keys start with "sk-" or "sk-proj-"
+            if [[ "$key" =~ ^sk- ]] || [[ "$key" =~ ^sk-proj- ]]; then
+                return 0
+            else
+                return 3
+            fi
+            ;;
+        "anthropic")
+            # Anthropic keys start with "sk-ant-"
+            if [[ "$key" =~ ^sk-ant- ]]; then
+                return 0
+            else
+                return 3
+            fi
+            ;;
+        "gemini")
+            # Google Gemini keys start with "AIza"
+            if [[ "$key" =~ ^AIza ]]; then
+                return 0
+            else
+                return 3
+            fi
+            ;;
+        "moonshot")
+            # Moonshot keys start with "sk-"
+            if [[ "$key" =~ ^sk- ]]; then
+                return 0
+            else
+                return 3
+            fi
+            ;;
+        *)
+            # Unknown service - just check length
+            return 0
+            ;;
+    esac
+}
+
+# Get validation error message
+get_validation_error() {
+    local service="$1"
+    local error_code="$2"
+    
+    case "$error_code" in
+        1)
+            echo "No key provided"
+            ;;
+        2)
+            echo "Key is too short (minimum 32 characters expected)"
+            ;;
+        3)
+            case "$service" in
+                "openai")
+                    echo "Invalid format. OpenAI keys should start with 'sk-' or 'sk-proj-'"
+                    ;;
+                "anthropic")
+                    echo "Invalid format. Anthropic keys should start with 'sk-ant-'"
+                    ;;
+                "gemini")
+                    echo "Invalid format. Google Gemini keys should start with 'AIza'"
+                    ;;
+                "moonshot")
+                    echo "Invalid format. Moonshot keys should start with 'sk-'"
+                    ;;
+                *)
+                    echo "Invalid key format"
+                    ;;
+            esac
+            ;;
+        *)
+            echo "Unknown validation error"
+            ;;
+    esac
+}
+
+# Get example key format for a service
+get_key_example() {
+    local service="$1"
+    
+    case "$service" in
+        "openai")
+            echo "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            ;;
+        "anthropic")
+            echo "sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            ;;
+        "gemini")
+            echo "AIzaXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+            ;;
+        "moonshot")
+            echo "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            ;;
+        *)
+            echo "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            ;;
+    esac
+}
+
+# Prompt for API key with validation and confirmation
+# Usage: prompt_api_key "variable_name" "Service Name" "service_id" "required|optional"
+prompt_api_key() {
+    local var_name="$1"
+    local service_display_name="$2"
+    local service_id="$3"
+    local requirement="$4"  # "required" or "optional"
+    local user_input=""
+    local key_valid=false
+    local max_attempts=3
+    local attempt=0
+    
+    while [ "$key_valid" = false ] && [ $attempt -lt $max_attempts ]; do
+        attempt=$((attempt + 1))
+        
+        # Display prompt
+        if [ "$requirement" = "optional" ]; then
+            printf "   ${CYAN}$service_display_name API Key${NC} ${DIM}(optional, press Enter to skip)${NC}: "
+        else
+            printf "   ${CYAN}$service_display_name API Key${NC}: "
+        fi
+        
+        # Read user input
+        read -r user_input
+        
+        # Check if empty
+        if [ -z "$user_input" ]; then
+            # Ask for confirmation to skip
+            if [ "$requirement" = "required" ]; then
+                echo ""
+                echo -e "   ${YELLOW}${EMOJI_WARN} No API key provided for $service_display_name.${NC}"
+                echo -e "   ${DIM}This key is recommended for the orchestrator to work properly.${NC}"
+                printf "   ${WHITE}Continue without $service_display_name API key? (yes/no) [no]: ${NC}"
+                local confirm=""
+                read -r confirm
+                confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
+                
+                if [ "$confirm" = "yes" ] || [ "$confirm" = "y" ]; then
+                    eval "$var_name=\"\""
+                    API_KEY_STATUS[$service_id]="skipped"
+                    echo -e "   ${DIM}→ $service_display_name key skipped (can be added later)${NC}"
+                    key_valid=true
+                else
+                    echo -e "   ${DIM}→ Please enter your $service_display_name API key${NC}"
+                    echo -e "   ${DIM}   Example format: $(get_key_example $service_id)${NC}"
+                    echo ""
+                    # Continue the loop to ask again
+                fi
+            else
+                # Optional key - skip without confirmation
+                eval "$var_name=\"\""
+                API_KEY_STATUS[$service_id]="skipped"
+                echo -e "   ${DIM}→ $service_display_name key skipped (optional)${NC}"
+                key_valid=true
+            fi
+        else
+            # Validate the key format
+            validate_api_key_format "$service_id" "$user_input"
+            local validation_result=$?
+            
+            if [ $validation_result -eq 0 ]; then
+                # Key is valid
+                eval "$var_name=\"\$user_input\""
+                API_KEY_STATUS[$service_id]="configured"
+                # Show masked key for confirmation
+                local masked_key="${user_input:0:8}...${user_input: -4}"
+                echo -e "   ${GREEN}${EMOJI_CHECK} Valid key format${NC} ${DIM}($masked_key)${NC}"
+                key_valid=true
+            else
+                # Invalid format - warn and ask to re-enter or continue anyway
+                local error_msg=$(get_validation_error "$service_id" "$validation_result")
+                echo ""
+                echo -e "   ${YELLOW}${EMOJI_WARN} Warning: $error_msg${NC}"
+                echo -e "   ${DIM}   Expected format: $(get_key_example $service_id)${NC}"
+                echo ""
+                
+                printf "   ${WHITE}Options:${NC}\n"
+                printf "   ${WHITE}  [1]${NC} Re-enter the key\n"
+                printf "   ${WHITE}  [2]${NC} Use this key anyway (may not work)\n"
+                if [ "$requirement" = "optional" ]; then
+                    printf "   ${WHITE}  [3]${NC} Skip this key\n"
+                fi
+                printf "   ${WHITE}Choice [1]: ${NC}"
+                
+                local choice=""
+                read -r choice
+                choice=${choice:-1}
+                
+                case "$choice" in
+                    2)
+                        # Use the key anyway
+                        eval "$var_name=\"\$user_input\""
+                        API_KEY_STATUS[$service_id]="configured_unverified"
+                        echo -e "   ${YELLOW}→ Using key (format not verified)${NC}"
+                        key_valid=true
+                        ;;
+                    3)
+                        if [ "$requirement" = "optional" ]; then
+                            eval "$var_name=\"\""
+                            API_KEY_STATUS[$service_id]="skipped"
+                            echo -e "   ${DIM}→ $service_display_name key skipped${NC}"
+                            key_valid=true
+                        else
+                            echo -e "   ${DIM}→ Please try again${NC}"
+                            echo ""
+                        fi
+                        ;;
+                    *)
+                        # Re-enter (default)
+                        echo -e "   ${DIM}→ Please enter the correct key${NC}"
+                        echo ""
+                        ;;
+                esac
+            fi
+        fi
+    done
+    
+    # If we've exceeded max attempts for a required key, mark as skipped
+    if [ "$key_valid" = false ]; then
+        echo -e "   ${YELLOW}${EMOJI_WARN} Maximum attempts reached. Skipping $service_display_name key.${NC}"
+        eval "$var_name=\"\""
+        API_KEY_STATUS[$service_id]="skipped"
+    fi
+}
+
+# Print API key configuration summary
+print_api_key_summary() {
+    echo ""
+    echo -e "${BOLD}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BOLD}                    API Key Configuration Summary${NC}"
+    echo -e "${BOLD}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    local missing_required=0
+    local config_file="$HOME/.config/ai-orchestrator/config.env"
+    
+    # OpenAI
+    case "${API_KEY_STATUS[openai]}" in
+        "configured")
+            echo -e "   ${GREEN}${EMOJI_CHECK} OpenAI:${NC} Configured"
+            ;;
+        "configured_unverified")
+            echo -e "   ${YELLOW}${EMOJI_WARN} OpenAI:${NC} Configured (format not verified)"
+            ;;
+        *)
+            echo -e "   ${YELLOW}${EMOJI_WARN} OpenAI:${NC} Skipped"
+            missing_required=$((missing_required + 1))
+            ;;
+    esac
+    
+    # Anthropic
+    case "${API_KEY_STATUS[anthropic]}" in
+        "configured")
+            echo -e "   ${GREEN}${EMOJI_CHECK} Anthropic:${NC} Configured"
+            ;;
+        "configured_unverified")
+            echo -e "   ${YELLOW}${EMOJI_WARN} Anthropic:${NC} Configured (format not verified)"
+            ;;
+        *)
+            echo -e "   ${YELLOW}${EMOJI_WARN} Anthropic:${NC} Skipped"
+            missing_required=$((missing_required + 1))
+            ;;
+    esac
+    
+    # Gemini
+    case "${API_KEY_STATUS[gemini]}" in
+        "configured")
+            echo -e "   ${GREEN}${EMOJI_CHECK} Gemini:${NC} Configured"
+            ;;
+        "configured_unverified")
+            echo -e "   ${YELLOW}${EMOJI_WARN} Gemini:${NC} Configured (format not verified)"
+            ;;
+        *)
+            echo -e "   ${YELLOW}${EMOJI_WARN} Gemini:${NC} Skipped"
+            missing_required=$((missing_required + 1))
+            ;;
+    esac
+    
+    # Moonshot (optional)
+    case "${API_KEY_STATUS[moonshot]}" in
+        "configured")
+            echo -e "   ${GREEN}${EMOJI_CHECK} Moonshot:${NC} Configured"
+            ;;
+        "configured_unverified")
+            echo -e "   ${YELLOW}${EMOJI_WARN} Moonshot:${NC} Configured (format not verified)"
+            ;;
+        *)
+            echo -e "   ${DIM}○ Moonshot:${NC} Skipped (optional)"
+            ;;
+    esac
+    
+    echo ""
+    
+    # Show warnings if required keys are missing
+    if [ $missing_required -gt 0 ]; then
+        echo -e "   ${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "   ${YELLOW}${EMOJI_WARN} Warning: Some recommended API keys are missing.${NC}"
+        echo -e "   ${YELLOW}   The orchestrator may have limited functionality.${NC}"
+        echo ""
+        echo -e "   ${DIM}You can add them later by editing:${NC}"
+        echo -e "   ${CYAN}   $INSTALL_DIR/.env${NC}"
+        echo -e "   ${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    else
+        echo -e "   ${GREEN}${EMOJI_CHECK} All recommended API keys configured!${NC}"
+    fi
+    
+    echo ""
+}
+
+# ============================================================================
 # Configuration Wizard
 # ============================================================================
 run_configuration_wizard() {
@@ -978,13 +1313,17 @@ run_configuration_wizard() {
     echo -e "${DIM}   - Google AI: https://aistudio.google.com/app/apikey${NC}"
     echo -e "${DIM}   - Moonshot: https://platform.moonshot.cn/${NC}"
     echo ""
-    
-    prompt_no_default "OPENAI_KEY" "OpenAI API Key"
-    prompt_no_default "ANTHROPIC_KEY" "Anthropic API Key"
-    prompt_no_default "GEMINI_KEY" "Google Gemini API Key"
-    prompt_no_default "MOONSHOT_KEY" "Moonshot API Key (optional)"
-    
+    echo -e "${DIM}   Keys are validated for format. You can skip and add them later.${NC}"
     echo ""
+    
+    # Prompt for each API key with validation
+    prompt_api_key "OPENAI_KEY" "OpenAI" "openai" "required"
+    prompt_api_key "ANTHROPIC_KEY" "Anthropic" "anthropic" "required"
+    prompt_api_key "GEMINI_KEY" "Google Gemini" "gemini" "required"
+    prompt_api_key "MOONSHOT_KEY" "Moonshot" "moonshot" "optional"
+    
+    # Show API key summary
+    print_api_key_summary
     
     # Default Models
     echo -e "${EMOJI_GEAR} ${BOLD}Default Models${NC}"

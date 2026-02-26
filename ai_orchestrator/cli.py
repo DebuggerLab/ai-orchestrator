@@ -51,7 +51,8 @@ def main():
 @click.option("--model", "-m", type=click.Choice(["openai", "anthropic", "gemini", "moonshot"]), 
               help="Force use of specific model")
 @click.option("--output", "-o", type=click.Path(), help="Save output to file")
-def run(task: tuple, env: Optional[str], quiet: bool, model: Optional[str], output: Optional[str]):
+@click.option("--debug", "-d", is_flag=True, help="Show debug information")
+def run(task: tuple, env: Optional[str], quiet: bool, model: Optional[str], output: Optional[str], debug: bool):
     """Execute a task using AI orchestration.
     
     Examples:
@@ -88,21 +89,48 @@ def run(task: tuple, env: Optional[str], quiet: bool, model: Optional[str], outp
             console.print(f"Available models: {', '.join(available)}")
             sys.exit(1)
         
-        response = _call_model_directly(config, model, task_description, quiet)
+        response = _call_model_directly(config, model, task_description, quiet, debug=debug)
         
-        if response:
-            if not quiet:
-                console.print(Panel(response.content, title=f"[bold green]{model.upper()} Response[/bold green]", border_style="green"))
-            else:
-                console.print(response.content)
-            
-            if output:
-                output_path = Path(output)
-                output_path.write_text(response.content)
-                console.print(f"\n[green]Output saved to: {output_path}[/green]")
-        else:
-            console.print("[bold red]Error:[/bold red] Failed to get response from model.")
+        # Check if we got a response at all
+        if response is None:
+            console.print("[bold red]Error:[/bold red] Failed to get response (no response object).")
+            console.print("\n[yellow]Troubleshooting tips:[/yellow]")
+            console.print("  1. Check your API key is valid")
+            console.print("  2. Check your network connection")
+            console.print(f"  3. Run with --debug flag for more info")
             sys.exit(1)
+        
+        # Check if the response was successful
+        if not response.success:
+            console.print(f"[bold red]Error:[/bold red] API call failed")
+            if response.error:
+                console.print(f"[red]Details: {response.error}[/red]")
+            console.print("\n[yellow]Troubleshooting tips:[/yellow]")
+            console.print("  1. Verify your API key is correct and active")
+            console.print("  2. Check if you have API credits/quota remaining")
+            console.print("  3. The model name might not be available")
+            console.print(f"  4. Current model: {getattr(config.models, f'{model}_model', 'unknown')}")
+            sys.exit(1)
+        
+        # Check for empty content
+        if not response.content or response.content.strip() == "":
+            console.print("[bold yellow]Warning:[/bold yellow] Received empty response from API")
+            if debug:
+                console.print(f"[dim]Debug: Full response metadata: {response.metadata}[/dim]")
+            sys.exit(1)
+        
+        # Success - display the response
+        if not quiet:
+            console.print(Panel(response.content, title=f"[bold green]{model.upper()} Response[/bold green]", border_style="green"))
+            if response.tokens_used:
+                console.print(f"[dim]Tokens used: {response.tokens_used}[/dim]")
+        else:
+            console.print(response.content)
+        
+        if output:
+            output_path = Path(output)
+            output_path.write_text(response.content)
+            console.print(f"\n[green]Output saved to: {output_path}[/green]")
         return
     
     # Initialize orchestrator for automatic routing
@@ -128,30 +156,57 @@ def run(task: tuple, env: Optional[str], quiet: bool, model: Optional[str], outp
         sys.exit(1)
 
 
-def _call_model_directly(config: Config, model: str, prompt: str, quiet: bool = False):
+def _call_model_directly(config: Config, model: str, prompt: str, quiet: bool = False, debug: bool = False):
     """Call a specific model directly without routing."""
     from .models import OpenAIClient, AnthropicClient, GeminiClient, MoonshotClient
     
     client = None
     
-    if model == "openai":
-        client = OpenAIClient(config.openai_api_key, config.models.openai_model)
-    elif model == "anthropic":
-        client = AnthropicClient(config.anthropic_api_key, config.models.anthropic_model)
-    elif model == "gemini":
-        client = GeminiClient(config.gemini_api_key, config.models.gemini_model)
-    elif model == "moonshot":
-        client = MoonshotClient(config.moonshot_api_key, config.models.moonshot_model)
+    if debug:
+        console.print(f"[dim]Debug: Creating {model} client...[/dim]")
+        console.print(f"[dim]Debug: Model name: {getattr(config.models, f'{model}_model', 'unknown')}[/dim]")
+    
+    try:
+        if model == "openai":
+            client = OpenAIClient(config.openai_api_key, config.models.openai_model)
+        elif model == "anthropic":
+            client = AnthropicClient(config.anthropic_api_key, config.models.anthropic_model)
+        elif model == "gemini":
+            client = GeminiClient(config.gemini_api_key, config.models.gemini_model)
+        elif model == "moonshot":
+            client = MoonshotClient(config.moonshot_api_key, config.models.moonshot_model)
+    except Exception as e:
+        console.print(f"[bold red]Error creating {model} client:[/bold red] {e}")
+        return None
     
     if not client:
+        console.print(f"[bold red]Error:[/bold red] Unknown model '{model}'")
         return None
     
     try:
         if not quiet:
             console.print(f"[dim]Calling {model}...[/dim]")
-        return client.complete_sync(prompt)
+        
+        if debug:
+            console.print(f"[dim]Debug: Sending request to {model}...[/dim]")
+        
+        response = client.complete_sync(prompt)
+        
+        if debug:
+            console.print(f"[dim]Debug: Response received[/dim]")
+            console.print(f"[dim]Debug: Success: {response.success}[/dim]")
+            console.print(f"[dim]Debug: Content length: {len(response.content) if response.content else 0}[/dim]")
+            if response.error:
+                console.print(f"[dim]Debug: Error: {response.error}[/dim]")
+            if response.tokens_used:
+                console.print(f"[dim]Debug: Tokens used: {response.tokens_used}[/dim]")
+        
+        return response
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {e}")
+        console.print(f"[bold red]Error calling {model}:[/bold red] {e}")
+        import traceback
+        if debug:
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
         return None
 
 
@@ -161,7 +216,8 @@ def _call_model_directly(config: Config, model: str, prompt: str, quiet: bool = 
               required=True, help="Model to use")
 @click.option("--env", "-e", type=click.Path(exists=True), help="Path to .env file")
 @click.option("--quiet", "-q", is_flag=True, help="Output only the response")
-def ask(prompt: tuple, model: str, env: Optional[str], quiet: bool):
+@click.option("--debug", "-d", is_flag=True, help="Show debug information")
+def ask(prompt: tuple, model: str, env: Optional[str], quiet: bool, debug: bool):
     """Quick query to a specific model.
     
     Simple command for direct model interaction without task routing.
@@ -173,12 +229,17 @@ def ask(prompt: tuple, model: str, env: Optional[str], quiet: bool):
     ai-orchestrator ask -m anthropic "Explain recursion"
     ai-orchestrator ask -m gemini "What is 2+2?"
     ai-orchestrator ask -m moonshot "Review this code snippet"
+    ai-orchestrator ask -m anthropic -d "Test with debug"
     """
     prompt_text = " ".join(prompt)
     
     # Load configuration
     env_path = Path(env) if env else None
     config = Config.load(env_path)
+    
+    if debug:
+        console.print(f"[dim]Debug: Config loaded from {env_path or 'default locations'}[/dim]")
+        console.print(f"[dim]Debug: Prompt: {prompt_text[:100]}{'...' if len(prompt_text) > 100 else ''}[/dim]")
     
     # Check model availability
     available = config.get_available_models()
@@ -191,16 +252,47 @@ def ask(prompt: tuple, model: str, env: Optional[str], quiet: bool):
     if not quiet:
         console.print(f"[cyan]Querying {model}...[/cyan]\n")
     
-    response = _call_model_directly(config, model, prompt_text, quiet=True)
+    response = _call_model_directly(config, model, prompt_text, quiet=True, debug=debug)
     
-    if response:
-        if not quiet:
-            console.print(Panel(response.content, title=f"[bold green]{model.upper()}[/bold green]", border_style="green"))
-        else:
-            print(response.content)
-    else:
-        console.print("[bold red]Error:[/bold red] Failed to get response.")
+    # Check if we got a response at all
+    if response is None:
+        console.print("[bold red]Error:[/bold red] Failed to get response (no response object).")
+        console.print("\n[yellow]Troubleshooting tips:[/yellow]")
+        console.print("  1. Check your API key is valid")
+        console.print("  2. Check your network connection")
+        console.print(f"  3. Run with --debug flag for more info")
         sys.exit(1)
+    
+    # Check if the response was successful
+    if not response.success:
+        console.print(f"[bold red]Error:[/bold red] API call failed")
+        if response.error:
+            console.print(f"[red]Details: {response.error}[/red]")
+        console.print("\n[yellow]Troubleshooting tips:[/yellow]")
+        console.print("  1. Verify your API key is correct and active")
+        console.print("  2. Check if you have API credits/quota remaining")
+        console.print("  3. The model name might not be available in your region")
+        console.print(f"  4. Current model: {getattr(config.models, f'{model}_model', 'unknown')}")
+        sys.exit(1)
+    
+    # Check for empty content
+    if not response.content or response.content.strip() == "":
+        console.print("[bold yellow]Warning:[/bold yellow] Received empty response from API")
+        if debug:
+            console.print(f"[dim]Debug: Full response metadata: {response.metadata}[/dim]")
+        console.print("\n[yellow]This might indicate:[/yellow]")
+        console.print("  • The model had nothing to say")
+        console.print("  • Content was filtered")
+        console.print("  • API issue")
+        sys.exit(1)
+    
+    # Success - display the response
+    if not quiet:
+        console.print(Panel(response.content, title=f"[bold green]{model.upper()}[/bold green]", border_style="green"))
+        if response.tokens_used:
+            console.print(f"[dim]Tokens used: {response.tokens_used}[/dim]")
+    else:
+        print(response.content)
 
 
 @main.command()
@@ -385,6 +477,72 @@ def list_models(provider: str, env: Optional[str]):
             console.print("  • Verify your GEMINI_API_KEY is valid")
             console.print("  • Get a key from: https://aistudio.google.com/apikey")
             sys.exit(1)
+
+
+@main.command("test-api")
+@click.option("--model", "-m", type=click.Choice(["openai", "anthropic", "gemini", "moonshot", "all"]), 
+              default="all", help="Model to test (default: all)")
+@click.option("--env", "-e", type=click.Path(exists=True), help="Path to .env file")
+def test_api(model: str, env: Optional[str]):
+    """Test API connections for configured models.
+    
+    Sends a simple test request to verify your API keys are working.
+    
+    Examples:
+    
+    \b
+    ai-orchestrator test-api
+    ai-orchestrator test-api -m anthropic
+    ai-orchestrator test-api -m openai
+    """
+    print_banner()
+    
+    env_path = Path(env) if env else None
+    config = Config.load(env_path)
+    
+    models_to_test = ["openai", "anthropic", "gemini", "moonshot"] if model == "all" else [model]
+    
+    results = []
+    
+    for m in models_to_test:
+        available = config.get_available_models()
+        if m not in available:
+            console.print(f"[yellow]⏭️  {m.upper()}:[/yellow] Skipped (no API key configured)")
+            results.append((m, None))
+            continue
+        
+        console.print(f"[cyan]Testing {m.upper()}...[/cyan]")
+        
+        response = _call_model_directly(config, m, "Say 'OK' and nothing else.", quiet=True)
+        
+        if response is None:
+            console.print(f"  [red]❌ FAILED - No response object[/red]")
+            results.append((m, False))
+        elif not response.success:
+            console.print(f"  [red]❌ FAILED - {response.error}[/red]")
+            results.append((m, False))
+        elif not response.content or not response.content.strip():
+            console.print(f"  [red]❌ FAILED - Empty response[/red]")
+            results.append((m, False))
+        else:
+            console.print(f"  [green]✅ SUCCESS - Response: {response.content[:50]}{'...' if len(response.content) > 50 else ''}[/green]")
+            results.append((m, True))
+    
+    # Summary
+    console.print()
+    passed = sum(1 for _, s in results if s is True)
+    failed = sum(1 for _, s in results if s is False)
+    skipped = sum(1 for _, s in results if s is None)
+    
+    console.print(f"[bold]Summary:[/bold] {passed} passed, {failed} failed, {skipped} skipped")
+    
+    if failed > 0:
+        console.print("\n[yellow]Troubleshooting tips:[/yellow]")
+        console.print("  1. Verify your API keys are correct in ~/.config/ai-orchestrator/config.env")
+        console.print("  2. Check that your API keys have not expired")
+        console.print("  3. Verify you have credits/quota remaining")
+        console.print("  4. Run 'ai-orchestrator status' to see configuration")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

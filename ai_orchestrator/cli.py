@@ -81,7 +81,31 @@ def run(task: tuple, env: Optional[str], quiet: bool, model: Optional[str], outp
     if not quiet:
         console.print(f"[dim]Available models: {', '.join(available)}[/dim]\n")
     
-    # Initialize orchestrator
+    # If specific model requested, use direct query
+    if model:
+        if model not in available:
+            console.print(f"[bold red]Error:[/bold red] Model '{model}' is not configured.")
+            console.print(f"Available models: {', '.join(available)}")
+            sys.exit(1)
+        
+        response = _call_model_directly(config, model, task_description, quiet)
+        
+        if response:
+            if not quiet:
+                console.print(Panel(response.content, title=f"[bold green]{model.upper()} Response[/bold green]", border_style="green"))
+            else:
+                console.print(response.content)
+            
+            if output:
+                output_path = Path(output)
+                output_path.write_text(response.content)
+                console.print(f"\n[green]Output saved to: {output_path}[/green]")
+        else:
+            console.print("[bold red]Error:[/bold red] Failed to get response from model.")
+            sys.exit(1)
+        return
+    
+    # Initialize orchestrator for automatic routing
     orchestrator = Orchestrator(config)
     
     # Execute task
@@ -101,6 +125,81 @@ def run(task: tuple, env: Optional[str], quiet: bool, model: Optional[str], outp
     
     # Exit with error code if task failed
     if not result.success:
+        sys.exit(1)
+
+
+def _call_model_directly(config: Config, model: str, prompt: str, quiet: bool = False):
+    """Call a specific model directly without routing."""
+    from .models import OpenAIClient, AnthropicClient, GeminiClient, MoonshotClient
+    
+    client = None
+    
+    if model == "openai":
+        client = OpenAIClient(config.openai_api_key, config.models.openai_model)
+    elif model == "anthropic":
+        client = AnthropicClient(config.anthropic_api_key, config.models.anthropic_model)
+    elif model == "gemini":
+        client = GeminiClient(config.gemini_api_key, config.models.gemini_model)
+    elif model == "moonshot":
+        client = MoonshotClient(config.moonshot_api_key, config.models.moonshot_model)
+    
+    if not client:
+        return None
+    
+    try:
+        if not quiet:
+            console.print(f"[dim]Calling {model}...[/dim]")
+        return client.complete_sync(prompt)
+    except Exception as e:
+        console.print(f"[bold red]Error:[/bold red] {e}")
+        return None
+
+
+@main.command()
+@click.argument("prompt", nargs=-1, required=True)
+@click.option("--model", "-m", type=click.Choice(["openai", "anthropic", "gemini", "moonshot"]), 
+              required=True, help="Model to use")
+@click.option("--env", "-e", type=click.Path(exists=True), help="Path to .env file")
+@click.option("--quiet", "-q", is_flag=True, help="Output only the response")
+def ask(prompt: tuple, model: str, env: Optional[str], quiet: bool):
+    """Quick query to a specific model.
+    
+    Simple command for direct model interaction without task routing.
+    
+    Examples:
+    
+    \b
+    ai-orchestrator ask -m openai "Write hello world in Python"
+    ai-orchestrator ask -m anthropic "Explain recursion"
+    ai-orchestrator ask -m gemini "What is 2+2?"
+    ai-orchestrator ask -m moonshot "Review this code snippet"
+    """
+    prompt_text = " ".join(prompt)
+    
+    # Load configuration
+    env_path = Path(env) if env else None
+    config = Config.load(env_path)
+    
+    # Check model availability
+    available = config.get_available_models()
+    if model not in available:
+        console.print(f"[bold red]Error:[/bold red] Model '{model}' is not configured.")
+        console.print(f"Available models: {', '.join(available) if available else 'none'}")
+        console.print("\nPlease add the API key to your .env file.")
+        sys.exit(1)
+    
+    if not quiet:
+        console.print(f"[cyan]Querying {model}...[/cyan]\n")
+    
+    response = _call_model_directly(config, model, prompt_text, quiet=True)
+    
+    if response:
+        if not quiet:
+            console.print(Panel(response.content, title=f"[bold green]{model.upper()}[/bold green]", border_style="green"))
+        else:
+            print(response.content)
+    else:
+        console.print("[bold red]Error:[/bold red] Failed to get response.")
         sys.exit(1)
 
 

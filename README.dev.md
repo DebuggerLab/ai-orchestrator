@@ -177,17 +177,108 @@ Replace `your-actual-*-key` with your real API keys.
 
 After setup, you can use these commands:
 
-```bash
-# CLI Commands
-ai-orchestrator --help              # Show all commands
-ai-orchestrator list-models gemini  # List available Gemini models
-ai-orchestrator orchestrate "task"  # Run a task through the orchestrator
+### CLI Commands
 
-# Server Commands
+```bash
+# Help and status
+ai-orchestrator --help              # Show all commands
+ai-orchestrator status              # Check configuration status
+ai-orchestrator test-api            # Test all API connections
+ai-orchestrator test-api -m MODEL   # Test specific model
+
+# Task execution
+ai-orchestrator run "task"          # Run task with auto-routing
+ai-orchestrator run -m MODEL "task" # Force specific model
+ai-orchestrator analyze "task"      # Preview routing without executing
+
+# Direct model queries
+ai-orchestrator ask -m openai "prompt"     # Query OpenAI
+ai-orchestrator ask -m anthropic "prompt"  # Query Anthropic
+ai-orchestrator ask -m gemini "prompt"     # Query Gemini
+ai-orchestrator ask -m moonshot "prompt"   # Query Moonshot
+
+# Model management
+ai-orchestrator list-models gemini  # List available Gemini models
+ai-orchestrator init                # Initialize .env file
+```
+
+### Server Commands
+
+```bash
 ./scripts/start-server.sh           # Start the MCP server
 ./scripts/stop-server.sh            # Stop the MCP server
 ./scripts/restart-server.sh         # Restart the MCP server
 ./scripts/status.sh                 # Check server status
+```
+
+---
+
+## 🧪 Testing During Development
+
+### Test Each AI Model
+
+```bash
+# Activate venv first!
+source venv/bin/activate
+
+# Quick test for each model
+ai-orchestrator ask -m openai "Say OK"      # Test OpenAI
+ai-orchestrator ask -m anthropic "Say OK"   # Test Anthropic
+ai-orchestrator ask -m gemini "Say OK"      # Test Gemini
+ai-orchestrator ask -m moonshot "Say OK"    # Test Moonshot
+
+# Or test all at once
+ai-orchestrator test-api
+```
+
+### Test with Debug Output
+
+```bash
+# See detailed debug info during API calls
+ai-orchestrator ask -m anthropic -d "Test prompt"
+ai-orchestrator run -m openai -d "Test task"
+```
+
+### Test Task Routing
+
+```bash
+# See how a task would be routed without executing
+ai-orchestrator analyze "Design and implement a REST API"
+```
+
+### Model-Specific Development Tests
+
+#### OpenAI (Architecture & Design)
+```bash
+ai-orchestrator run -m openai "Design a microservices architecture for a chat app"
+ai-orchestrator run -m openai "Create a database schema for user management"
+```
+
+#### Anthropic (Coding & Implementation)
+```bash
+ai-orchestrator run -m anthropic "Write a Python rate limiter class"
+ai-orchestrator run -m anthropic "Implement binary search in TypeScript"
+```
+
+#### Gemini (Reasoning & Analysis)
+```bash
+ai-orchestrator run -m gemini "Explain the time complexity of merge sort"
+ai-orchestrator run -m gemini "Compare REST vs GraphQL for a mobile app"
+```
+
+#### Moonshot (Code Review)
+```bash
+ai-orchestrator run -m moonshot "Review this code for security issues"
+```
+
+### Verify Setup After Changes
+
+```bash
+# Run this after making configuration changes
+source venv/bin/activate
+ai-orchestrator status
+ai-orchestrator test-api
+python -c "from ai_orchestrator.config import Config; c = Config(); print('Config loaded:', bool(c.openai_api_key or c.anthropic_api_key))"
 ```
 
 ## 🔒 Security Notes
@@ -288,9 +379,12 @@ If you keep forgetting to activate venv, use the helper script:
 ## 📚 Additional Resources
 
 - [Main README](./README.md) - Full project documentation
+- [USAGE_GUIDE.md](./USAGE_GUIDE.md) - Complete CLI reference
+- [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) - Quick copy-paste commands
 - [Installation Guide](./README_INSTALL.md) - Detailed installation instructions
 - [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions
 - [Model Documentation](./MODELS.md) - Available models and configuration
+- [MANUAL_SETUP.md](./MANUAL_SETUP.md) - Step-by-step manual setup
 
 ---
 

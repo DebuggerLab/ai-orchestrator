@@ -117,23 +117,68 @@ source venv/bin/activate
 # Check configuration status
 ai-orchestrator status
 
-# Test API connections
+# Test all API connections at once
 ai-orchestrator test-api
 ```
 
 ---
 
-## Step 7: Test the CLI
+## Step 7: Test Each AI Model
+
+### Test All Models at Once
 
 ```bash
 # Activate venv first!
 source venv/bin/activate
 
-# Run a simple test
-ai-orchestrator ask openai "Say hello!"
+# Test all configured APIs
+ai-orchestrator test-api
+```
 
-# Run a full task
+### Test Individual Models
+
+```bash
+# Test OpenAI (ChatGPT) - Architecture & Design
+ai-orchestrator ask -m openai "Say hello in one word"
+
+# Test Anthropic (Claude) - Coding & Implementation
+ai-orchestrator ask -m anthropic "Say hello in one word"
+
+# Test Google (Gemini) - Reasoning & Analysis
+ai-orchestrator ask -m gemini "Say hello in one word"
+
+# Test Moonshot (Kimi) - Code Review
+ai-orchestrator ask -m moonshot "Say hello in one word"
+```
+
+### Test Specific Model API Connection
+
+```bash
+ai-orchestrator test-api -m openai
+ai-orchestrator test-api -m anthropic
+ai-orchestrator test-api -m gemini
+ai-orchestrator test-api -m moonshot
+```
+
+---
+
+## Step 8: Run Your First Tasks
+
+```bash
+# Activate venv first!
+source venv/bin/activate
+
+# Run a simple task (auto-routed)
 ai-orchestrator run "Explain what an API is in 2 sentences"
+
+# Force a specific model
+ai-orchestrator run -m anthropic "Write a Python hello world function"
+
+# Save output to file
+ai-orchestrator run -m openai "Design a simple REST API" -o api-design.md
+
+# Use quiet mode for scripts
+ai-orchestrator ask -m anthropic -q "Write a sorting function"
 ```
 
 ---
@@ -249,11 +294,60 @@ The CLI will automatically look for configuration in this location.
 
 ---
 
+## Common Usage Examples
+
+### Task Routing by Model Type
+
+| Task Type | Best Model | Example Command |
+|-----------|------------|-----------------|
+| Architecture | OpenAI | `ai-orchestrator run -m openai "Design a microservices architecture"` |
+| Coding | Anthropic | `ai-orchestrator run -m anthropic "Implement a rate limiter in Python"` |
+| Reasoning | Gemini | `ai-orchestrator run -m gemini "Explain time complexity of quicksort"` |
+| Code Review | Moonshot | `ai-orchestrator run -m moonshot "Review this function for security"` |
+
+### Analyze Task Without Executing
+
+```bash
+ai-orchestrator analyze "Build a web application with authentication"
+```
+
+### List Available Gemini Models
+
+```bash
+ai-orchestrator list-models gemini
+```
+
+### Use Debug Mode
+
+```bash
+ai-orchestrator ask -m anthropic -d "Your prompt"
+```
+
+---
+
+## CLI Command Reference
+
+| Command | Purpose |
+|---------|---------|
+| `ai-orchestrator run "task"` | Execute task with orchestration |
+| `ai-orchestrator run -m MODEL "task"` | Force specific model |
+| `ai-orchestrator ask -m MODEL "prompt"` | Quick query to model |
+| `ai-orchestrator status` | Check configuration |
+| `ai-orchestrator test-api` | Test all API connections |
+| `ai-orchestrator test-api -m MODEL` | Test specific model |
+| `ai-orchestrator analyze "task"` | Preview routing |
+| `ai-orchestrator list-models gemini` | List available models |
+| `ai-orchestrator init` | Initialize .env file |
+
+---
+
 ## Need More Help?
 
 - 📖 [Main README](README.md) - Full documentation
+- 📚 [USAGE_GUIDE.md](USAGE_GUIDE.md) - Complete CLI reference
+- ⚡ [QUICK_REFERENCE.md](QUICK_REFERENCE.md) - Copy-paste commands
 - 🔧 [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues
-- 📚 [Model Documentation](MODELS.md) - Available models
+- 📋 [Model Documentation](MODELS.md) - Available models
 
 ---
 

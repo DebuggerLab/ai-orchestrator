@@ -626,10 +626,26 @@ ai-orchestrator list-models gemini
 
 ## 🖥️ Usage
 
+> 📚 **Complete CLI Reference:** See [USAGE_GUIDE.md](USAGE_GUIDE.md) for detailed documentation.
+> 
+> ⚡ **Quick Reference:** See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for copy-paste commands.
+
+### CLI Command Reference
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `run` | Execute task with orchestration | `ai-orchestrator run "Design an API"` |
+| `ask` | Quick query to specific model | `ai-orchestrator ask -m anthropic "Hello"` |
+| `status` | Check configuration | `ai-orchestrator status` |
+| `analyze` | Preview routing without executing | `ai-orchestrator analyze "Build a web app"` |
+| `test-api` | Test API connections | `ai-orchestrator test-api` |
+| `list-models` | List available models | `ai-orchestrator list-models gemini` |
+| `init` | Initialize .env file | `ai-orchestrator init` |
+
 ### Basic CLI Usage
 
 ```bash
-# Run a task
+# Run a task (auto-routed to best model)
 ai-orchestrator run "Design a REST API for a todo application"
 
 # Run with specific model
@@ -640,25 +656,38 @@ ai-orchestrator run "Create a roadmap for mobile app" -o roadmap.md
 
 # Quiet mode (minimal output)
 ai-orchestrator run -q "Quick task"
+
+# Debug mode (detailed output)
+ai-orchestrator run -d "Your task"
 ```
 
-### Commands
+### Direct Model Queries (ask command)
 
 ```bash
-# Execute a task with AI orchestration
-ai-orchestrator run "<task description>"
+# Quick query to OpenAI
+ai-orchestrator ask -m openai "Design a database schema"
 
-# Check configuration status
-ai-orchestrator status
+# Quick query to Anthropic
+ai-orchestrator ask -m anthropic "Write a Python sorting function"
 
-# Initialize .env file in current directory
-ai-orchestrator init
+# Quick query to Gemini
+ai-orchestrator ask -m gemini "Explain Big O notation"
 
-# Analyze task routing without executing
-ai-orchestrator analyze "<task description>"
+# Quick query to Moonshot
+ai-orchestrator ask -m moonshot "Review this code snippet"
+```
 
-# Show help
-ai-orchestrator --help
+### Test AI Model Connections
+
+```bash
+# Test all configured APIs
+ai-orchestrator test-api
+
+# Test specific model
+ai-orchestrator test-api -m openai
+ai-orchestrator test-api -m anthropic
+ai-orchestrator test-api -m gemini
+ai-orchestrator test-api -m moonshot
 ```
 
 ### Task Type Examples
@@ -666,25 +695,25 @@ ai-orchestrator --help
 **Architecture Tasks** (→ OpenAI/ChatGPT):
 ```bash
 ai-orchestrator run "Design a microservices architecture for an e-commerce platform"
-ai-orchestrator run "Create a system design for a real-time chat application"
+ai-orchestrator run -m openai "Create a system design for a real-time chat application"
 ```
 
 **Coding Tasks** (→ Anthropic/Claude):
 ```bash
 ai-orchestrator run "Implement a rate limiter in Python with sliding window"
-ai-orchestrator run "Write a React component for a data table with sorting"
+ai-orchestrator run -m anthropic "Write a React component for a data table with sorting"
 ```
 
 **Reasoning Tasks** (→ Google/Gemini):
 ```bash
 ai-orchestrator run "Analyze the trade-offs between SQL and NoSQL for this use case"
-ai-orchestrator run "Explain why this algorithm has O(n log n) complexity"
+ai-orchestrator run -m gemini "Explain why this algorithm has O(n log n) complexity"
 ```
 
 **Code Review Tasks** (→ Moonshot/Kimi):
 ```bash
 ai-orchestrator run "Review this code for security vulnerabilities"
-ai-orchestrator run "Audit this function for best practices"
+ai-orchestrator run -m moonshot "Audit this function for best practices"
 ```
 
 ---
@@ -885,9 +914,11 @@ nano .env
 
 ### Getting Help
 
+- 📚 **Complete CLI reference**: [USAGE_GUIDE.md](USAGE_GUIDE.md)
+- ⚡ **Quick copy-paste commands**: [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
 - 📖 **Full troubleshooting guide**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - 📖 **Manual setup guide**: [MANUAL_SETUP.md](MANUAL_SETUP.md)
-- 📚 **Model reference**: [MODELS.md](MODELS.md)
+- 📋 **Model reference**: [MODELS.md](MODELS.md)
 - 🖥️ **Cursor setup**: [cursor_integration/CURSOR_SETUP.md](cursor_integration/CURSOR_SETUP.md)
 - 📱 **Xcode extension**: [xcode_extension/README.md](xcode_extension/README.md)
 - 🐛 **Report issues** on GitHub

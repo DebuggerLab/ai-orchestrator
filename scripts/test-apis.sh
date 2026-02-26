@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# AI Orchestrator - API Test Script (Enhanced)
+# AI Orchestrator - API Test Script (Enhanced with macOS Compatibility)
 # ============================================================================
 # Tests connectivity to all configured AI APIs with timeouts and error handling
 # Usage: ./scripts/test-apis.sh
@@ -31,15 +31,188 @@ API_TIMEOUT=10  # seconds per API test
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
+# ===========================================
+# OS Detection and Compatibility
+# ===========================================
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*)    echo "macos" ;;
+        Linux*)     echo "linux" ;;
+        CYGWIN*|MINGW*|MSYS*) echo "windows" ;;
+        *)          echo "unknown" ;;
+    esac
+}
+
+OS_TYPE=$(detect_os)
+
+# Cross-platform timeout function
+# Works on macOS (without gtimeout), Linux, and others
+run_with_timeout() {
+    local timeout_seconds="$1"
+    shift
+    local command="$@"
+    
+    if [ "$OS_TYPE" = "linux" ]; then
+        # Linux has timeout built-in
+        timeout "$timeout_seconds" bash -c "$command"
+        return $?
+    elif [ "$OS_TYPE" = "macos" ]; then
+        # Check for gtimeout (from coreutils) first
+        if command -v gtimeout &> /dev/null; then
+            gtimeout "$timeout_seconds" bash -c "$command"
+            return $?
+        else
+            # Use Python-based timeout for macOS (no extra dependencies needed)
+            python3 -c "
+import subprocess
+import sys
+try:
+    result = subprocess.run(
+        ['bash', '-c', '''$command'''],
+        timeout=$timeout_seconds,
+        capture_output=True,
+        text=True
+    )
+    print(result.stdout, end='')
+    print(result.stderr, end='', file=sys.stderr)
+    sys.exit(result.returncode)
+except subprocess.TimeoutExpired:
+    sys.exit(124)  # Same exit code as GNU timeout
+except Exception as e:
+    print(str(e), file=sys.stderr)
+    sys.exit(1)
+" 2>&1
+            return $?
+        fi
+    else
+        # Fallback: just run without timeout
+        bash -c "$command"
+        return $?
+    fi
+}
+
+# Simplified timeout wrapper for Python commands
+python_with_timeout() {
+    local timeout_seconds="$1"
+    local python_code="$2"
+    
+    if [ "$OS_TYPE" = "linux" ]; then
+        timeout "$timeout_seconds" python -c "$python_code" 2>&1
+        return $?
+    elif [ "$OS_TYPE" = "macos" ]; then
+        if command -v gtimeout &> /dev/null; then
+            gtimeout "$timeout_seconds" python -c "$python_code" 2>&1
+            return $?
+        else
+            # Run Python with built-in timeout
+            python3 << PYTHON_EOF
+import subprocess
+import sys
+
+code = '''$python_code'''
+
+try:
+    result = subprocess.run(
+        [sys.executable, '-c', code],
+        timeout=$timeout_seconds,
+        capture_output=True,
+        text=True
+    )
+    if result.stdout:
+        print(result.stdout, end='')
+    if result.stderr:
+        print(result.stderr, end='', file=sys.stderr)
+    sys.exit(result.returncode)
+except subprocess.TimeoutExpired:
+    sys.exit(124)
+except Exception as e:
+    print(str(e), file=sys.stderr)
+    sys.exit(1)
+PYTHON_EOF
+            return $?
+        fi
+    else
+        python -c "$python_code" 2>&1
+        return $?
+    fi
+}
+
+# ===========================================
+# Virtual Environment Detection and Activation
+# ===========================================
+activate_venv() {
+    local venv_activated=false
+    local venv_path=""
+    
+    # Check multiple possible venv locations
+    local possible_venvs=(
+        "$PROJECT_DIR/venv"
+        "$PROJECT_DIR/.venv"
+        "$HOME/ai-orchestrator/venv"
+        "$HOME/ai_orchestrator/venv"
+        "./venv"
+        "./.venv"
+    )
+    
+    for venv in "${possible_venvs[@]}"; do
+        if [ -f "$venv/bin/activate" ]; then
+            venv_path="$venv"
+            break
+        fi
+    done
+    
+    if [ -n "$venv_path" ]; then
+        source "$venv_path/bin/activate"
+        venv_activated=true
+        echo -e "${DIM}Virtual environment activated: $venv_path${NC}"
+    fi
+    
+    # Set PYTHONPATH to include the project directory
+    export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
+    
+    if [ "$venv_activated" = false ]; then
+        echo -e "${YELLOW}${EMOJI_WARN} Warning: No virtual environment found.${NC}"
+        echo -e "${DIM}   Searched: ${possible_venvs[0]}, ${possible_venvs[1]}, ...${NC}"
+        echo -e "${DIM}   Run: ${CYAN}./install.sh${NC}${DIM} to set up the environment${NC}"
+        echo ""
+        return 1
+    fi
+    
+    return 0
+}
+
+# ===========================================
+# Check Python availability
+# ===========================================
+check_python() {
+    if ! command -v python &> /dev/null && ! command -v python3 &> /dev/null; then
+        echo -e "${RED}${EMOJI_CROSS} Python not found!${NC}"
+        echo -e "${DIM}   Please install Python 3.10 or later${NC}"
+        if [ "$OS_TYPE" = "macos" ]; then
+            echo -e "${DIM}   macOS: brew install python3${NC}"
+        elif [ "$OS_TYPE" = "linux" ]; then
+            echo -e "${DIM}   Linux: sudo apt install python3 OR sudo yum install python3${NC}"
+        fi
+        exit 1
+    fi
+    
+    # Ensure 'python' command is available (some systems only have python3)
+    if ! command -v python &> /dev/null; then
+        alias python=python3
+    fi
+}
+
 # Load environment
 if [ -f "$PROJECT_DIR/.env" ]; then
     source "$PROJECT_DIR/.env"
+elif [ -f ".env" ]; then
+    source ".env"
 fi
 
-# Activate virtual environment
-if [ -d "$PROJECT_DIR/venv" ]; then
-    source "$PROJECT_DIR/venv/bin/activate"
-fi
+# Check Python and activate venv
+check_python
+activate_venv
+VENV_STATUS=$?
 
 # Track results
 TESTS_PASSED=0
@@ -69,7 +242,7 @@ test_package() {
     
     # Run with timeout
     local result
-    result=$(timeout 5 python -c "import $import_name" 2>&1)
+    result=$(python_with_timeout 5 "import $import_name")
     local exit_code=$?
     
     if [ $exit_code -eq 0 ]; then
@@ -82,6 +255,7 @@ test_package() {
         return 1
     else
         echo -e "${RED}${EMOJI_CROSS} Not installed${NC}"
+        echo -e "      ${DIM}Run: ${CYAN}source venv/bin/activate && pip install -r requirements.txt${NC}"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         return 1
     fi
@@ -112,7 +286,7 @@ test_api() {
     local temp_file=$(mktemp)
     
     # Execute Python test with timeout
-    timeout $API_TIMEOUT python -c "$test_code" > "$temp_file" 2>&1
+    python_with_timeout $API_TIMEOUT "$test_code" > "$temp_file" 2>&1
     local exit_code=$?
     result=$(cat "$temp_file")
     rm -f "$temp_file"
@@ -151,7 +325,7 @@ test_module() {
     echo -ne "Testing ${CYAN}$module_name${NC}... "
     
     local result
-    result=$(timeout 5 python -c "$import_statement" 2>&1)
+    result=$(python_with_timeout 5 "$import_statement")
     local exit_code=$?
     
     if [ $exit_code -eq 0 ]; then
@@ -194,7 +368,7 @@ echo ""
 echo -e "${BOLD}═══════════════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}              ${EMOJI_ROCKET} AI Orchestrator API Tests${NC}"
 echo -e "${BOLD}═══════════════════════════════════════════════════════════════${NC}"
-echo -e "${DIM}Timeout: ${API_TIMEOUT}s per API test | Total tests: ${TOTAL_TESTS}${NC}"
+echo -e "${DIM}OS: ${OS_TYPE} | Timeout: ${API_TIMEOUT}s per API | Total tests: ${TOTAL_TESTS}${NC}"
 echo ""
 
 # ===========================================
@@ -339,9 +513,15 @@ echo ""
 # ===========================================
 # Suggestions
 # ===========================================
-if [ $TESTS_FAILED -gt 0 ] || [ $TESTS_SKIPPED -gt 0 ]; then
+if [ $TESTS_FAILED -gt 0 ] || [ $TESTS_SKIPPED -gt 0 ] || [ $VENV_STATUS -ne 0 ]; then
     echo -e "${BOLD}💡 Suggestions:${NC}"
     echo ""
+    
+    if [ $VENV_STATUS -ne 0 ]; then
+        echo -e "   ${YELLOW}•${NC} Virtual environment not found."
+        echo -e "     Run: ${CYAN}./install.sh${NC} to set up the environment"
+        echo ""
+    fi
     
     if [ $TESTS_SKIPPED -gt 0 ]; then
         echo -e "   ${YELLOW}•${NC} Some tests were skipped due to missing API keys."
@@ -353,8 +533,13 @@ if [ $TESTS_FAILED -gt 0 ] || [ $TESTS_SKIPPED -gt 0 ]; then
         echo -e "   ${RED}•${NC} Some tests failed. Common fixes:"
         echo -e "     - Check your API keys are valid and not expired"
         echo -e "     - Verify network connectivity"
-        echo -e "     - Run ${CYAN}pip install -r requirements.txt${NC} to install missing packages"
+        echo -e "     - Run: ${CYAN}source venv/bin/activate && pip install -r requirements.txt${NC}"
         echo ""
+    fi
+    
+    # OS-specific tips
+    if [ "$OS_TYPE" = "macos" ]; then
+        echo -e "   ${DIM}macOS Tip: Install coreutils for native timeout: brew install coreutils${NC}"
     fi
 fi
 

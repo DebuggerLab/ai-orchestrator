@@ -75,6 +75,31 @@ cd ai_orchestrator
 ./install.sh
 ```
 
+The installer will ask you to choose between:
+1. **Interactive Wizard** - Answer prompts to configure API keys (recommended for beginners)
+2. **Manual .env File** - Copy `.env.example` to `.env` and edit it yourself
+
+### ⚠️ CRITICAL: Activate Virtual Environment
+
+**You MUST activate the virtual environment before using the CLI!**
+
+```bash
+# Every time you open a new terminal:
+cd ~/ai-orchestrator  # or your installation directory
+source venv/bin/activate
+
+# Then you can use the CLI
+ai-orchestrator --help
+```
+
+**Or use the quick-start helper script:**
+
+```bash
+./quick-start.sh --help
+./quick-start.sh status
+./quick-start.sh run "Your task here"
+```
+
 ### What Happens During Installation
 
 The `install.sh` script automatically:
@@ -82,7 +107,7 @@ The `install.sh` script automatically:
 1. ✅ **Checks Prerequisites** - Verifies Python 3.10+ and pip are installed
 2. ✅ **Creates Virtual Environment** - Sets up isolated Python environment
 3. ✅ **Installs Dependencies** - Installs all required Python packages
-4. ✅ **Installs CLI Tool** - Makes `ai-orchestrator` command available globally
+4. ✅ **Installs CLI Tool** - Makes `ai-orchestrator` command available in venv
 5. ✅ **Creates Config Template** - Copies `.env.example` to `.env`
 6. ✅ **Sets Up MCP Server** - Prepares Cursor IDE integration
 7. ✅ **Configures Cursor** - Auto-configures Cursor settings (if Cursor is installed)
@@ -91,17 +116,30 @@ The `install.sh` script automatically:
 ### Next Steps After Installation
 
 ```bash
-# 1. Add your API keys
+# 1. Activate the virtual environment (REQUIRED!)
+source venv/bin/activate
+
+# 2. Add your API keys (if using manual setup)
 nano .env   # or use your preferred editor
 
-# 2. Verify everything is working
+# 3. Verify everything is working
 ai-orchestrator status
 
-# 3. Run your first task
+# 4. Run your first task
 ai-orchestrator run "Design a REST API for a todo application"
 ```
 
-> 📖 **Detailed installation guide:** See [README_INSTALL.md](README_INSTALL.md) for manual installation and advanced options.
+### Installation Methods
+
+| Method | Best For | Command |
+|--------|----------|---------|
+| **Interactive Wizard** | First-time users | `./install.sh` → choose [1] |
+| **Manual .env File** | Experienced users | `./install.sh` → choose [2] |
+| **Fully Manual** | Full control | See [MANUAL_SETUP.md](MANUAL_SETUP.md) |
+
+> 📖 **Detailed installation guide:** See [README_INSTALL.md](README_INSTALL.md) for advanced options.
+> 
+> 📖 **Manual setup guide:** See [MANUAL_SETUP.md](MANUAL_SETUP.md) for step-by-step manual configuration.
 
 ---
 
@@ -749,7 +787,46 @@ for subtask, response in result.subtask_results:
 
 > 📚 **For comprehensive troubleshooting, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)**
 
+### ⚠️ Most Common Issue: ModuleNotFoundError
+
+**Error:**
+```
+ModuleNotFoundError: No module named 'ai_orchestrator'
+```
+
+**Cause:** The virtual environment is not activated.
+
+**Solution:**
+```bash
+# 1. Navigate to the project directory
+cd ~/ai-orchestrator  # or wherever you installed it
+
+# 2. Activate the virtual environment
+source venv/bin/activate
+
+# 3. Now run your command
+ai-orchestrator status
+```
+
+**Alternative:** Use the quick-start script:
+```bash
+./quick-start.sh status
+```
+
+> ⚠️ **Remember**: You must activate the venv EVERY TIME you open a new terminal!
+
 ### Quick Fixes for Common Issues
+
+#### "command not found: ai-orchestrator"
+
+**Cause:** Venv not activated OR package not installed.
+
+```bash
+# Solution:
+source venv/bin/activate
+pip install -e .
+ai-orchestrator --help
+```
 
 #### MCP Server Not Starting / Empty Logs
 
@@ -782,10 +859,24 @@ GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 ```
 
+#### API Keys Not Found / "All models show Not configured"
+
+**Cause:** .env file doesn't exist or contains placeholders.
+
+```bash
+# Check if .env exists and has real values
+cat .env | grep -v "^#" | grep API_KEY
+
+# If you see "your_key_here", edit the file:
+nano .env
+```
+
 ### Common Error Reference
 
 | Error | Likely Cause | Quick Solution |
 |-------|--------------|----------------|
+| `ModuleNotFoundError: 'ai_orchestrator'` | **Venv not activated** | `source venv/bin/activate` |
+| `command not found: ai-orchestrator` | Venv not activated | `source venv/bin/activate` |
 | `ModuleNotFoundError: 'mcp'` | Missing dependency | `pip install mcp` |
 | `no such module 'XcodeKit'` | Using SPM | Use `./Scripts/build.sh --generate` |
 | `404 model not found` | Outdated model name | Update model in `.env` |
@@ -795,6 +886,7 @@ MOONSHOT_MODEL=moonshot-v1-8k
 ### Getting Help
 
 - 📖 **Full troubleshooting guide**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- 📖 **Manual setup guide**: [MANUAL_SETUP.md](MANUAL_SETUP.md)
 - 📚 **Model reference**: [MODELS.md](MODELS.md)
 - 🖥️ **Cursor setup**: [cursor_integration/CURSOR_SETUP.md](cursor_integration/CURSOR_SETUP.md)
 - 📱 **Xcode extension**: [xcode_extension/README.md](xcode_extension/README.md)

@@ -1,8 +1,73 @@
 # AI Orchestrator - Development Branch
 
-Welcome to the **dev** branch! This branch includes a secure two-step setup process that configures your development environment.
+Welcome to the **dev** branch! This branch includes multiple setup options to configure your development environment.
 
-## 🚀 Quick Start (One-Liner)
+## ⚠️ CRITICAL: Virtual Environment Activation
+
+**You MUST activate the virtual environment before using the CLI!**
+
+```bash
+# Every time you open a new terminal:
+cd ~/ai-orchestrator  # or your installation directory
+source venv/bin/activate
+
+# Then you can use the CLI
+ai-orchestrator --help
+```
+
+**Or use the quick-start script:**
+```bash
+./quick-start.sh --help
+```
+
+---
+
+## 🚀 Quick Start Options
+
+### Option 1: Interactive Installation (Recommended for Beginners)
+
+```bash
+git clone https://github.com/DebuggerLab/ai-orchestrator.git
+cd ai-orchestrator
+git checkout dev
+./install.sh  # Choose [1] for Interactive Wizard
+```
+
+### Option 2: Manual .env Setup (Recommended for Experienced Users)
+
+```bash
+git clone https://github.com/DebuggerLab/ai-orchestrator.git
+cd ai-orchestrator
+git checkout dev
+./install.sh  # Choose [2] for Manual .env
+```
+
+### Option 3: Fully Manual Setup
+
+```bash
+# 1. Clone and switch to dev branch
+git clone https://github.com/DebuggerLab/ai-orchestrator.git
+cd ai-orchestrator
+git checkout dev
+
+# 2. Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # ⚠️ REQUIRED!
+
+# 3. Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
+
+# 4. Create .env from template
+cp .env.example .env
+nano .env  # Add your API keys
+
+# 5. Verify setup
+ai-orchestrator status
+```
+
+### Option 4: Two-Step Secure Setup (For CI/CD)
 
 ```bash
 # Complete setup in one command:
@@ -19,7 +84,7 @@ git checkout dev
 # 2. Run setup and inject keys
 ./quick-dev-setup.sh && ./inject-dev-keys.sh
 
-# 3. Activate the virtual environment
+# 3. Activate the virtual environment (REQUIRED!)
 source venv/bin/activate
 
 # 4. Start using the AI Orchestrator
@@ -157,6 +222,34 @@ python -c "from ai_orchestrator.config import Config; c = Config(); print('OpenA
 
 ## 🐛 Troubleshooting
 
+### ⚠️ Most Common Issue: ModuleNotFoundError
+
+**Error:**
+```
+ModuleNotFoundError: No module named 'ai_orchestrator'
+```
+
+**Cause:** Virtual environment not activated.
+
+**Solution:**
+```bash
+cd ~/ai-orchestrator  # or your installation directory
+source venv/bin/activate  # ⚠️ REQUIRED!
+ai-orchestrator status
+```
+
+**Remember:** You must activate the venv EVERY TIME you open a new terminal!
+
+### "command not found: ai-orchestrator"
+
+**Cause:** Venv not activated OR package not installed.
+
+```bash
+source venv/bin/activate
+pip install -e .
+ai-orchestrator --help
+```
+
 ### "Config file not found" Error
 Run the setup script first:
 ```bash
@@ -169,12 +262,27 @@ You haven't injected real keys. Run:
 ./inject-dev-keys.sh
 ```
 
+Or manually edit the .env file:
+```bash
+nano .env  # Replace placeholders with real API keys
+```
+
 ### Virtual Environment Issues
 ```bash
 rm -rf venv
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+pip install -e .
+```
+
+### Using the Quick Start Script
+
+If you keep forgetting to activate venv, use the helper script:
+```bash
+./quick-start.sh status
+./quick-start.sh run "Your task"
+./quick-start.sh test-api
 ```
 
 ## 📚 Additional Resources

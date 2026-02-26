@@ -1334,6 +1334,193 @@ print_api_key_summary() {
 }
 
 # ============================================================================
+# Installation Method Selection
+# ============================================================================
+INSTALLATION_METHOD=""
+
+select_installation_method() {
+    print_step "Select Installation Method"
+    
+    echo ""
+    echo -e "${CYAN}${BOLD}Choose your preferred installation method:${NC}"
+    echo ""
+    echo -e "  ${WHITE}[1]${NC} ${BOLD}Interactive Wizard${NC} ${DIM}(Recommended for first-time users)${NC}"
+    echo -e "      └─ Answer prompts to configure API keys and settings"
+    echo ""
+    echo -e "  ${WHITE}[2]${NC} ${BOLD}Manual .env File${NC} ${DIM}(Recommended for experienced users)${NC}"
+    echo -e "      └─ Copy .env.example to .env and edit it yourself"
+    echo ""
+    printf "   Enter choice [1]: "
+    
+    local choice=""
+    read -r choice || true
+    choice=${choice:-1}
+    
+    case "$choice" in
+        2)
+            INSTALLATION_METHOD="manual"
+            echo ""
+            echo -e "${GREEN}${EMOJI_CHECK} Manual setup selected${NC}"
+            ;;
+        *)
+            INSTALLATION_METHOD="wizard"
+            echo ""
+            echo -e "${GREEN}${EMOJI_CHECK} Interactive wizard selected${NC}"
+            ;;
+    esac
+}
+
+# ============================================================================
+# Manual Setup Mode
+# ============================================================================
+run_manual_setup() {
+    print_step "Manual Configuration Setup"
+    
+    echo ""
+    echo -e "${CYAN}${BOLD}Manual .env Configuration${NC}"
+    echo ""
+    
+    # Ask for installation directory
+    echo -e "${EMOJI_FOLDER} ${BOLD}Installation Directory${NC}"
+    prompt_with_default "INSTALL_DIR" "Installation directory" "$DEFAULT_INSTALL_DIR"
+    
+    echo ""
+    
+    # Check if .env file exists
+    local env_file="$INSTALL_DIR/.env"
+    local env_example="$INSTALL_DIR/.env.example"
+    
+    if [ -f "$env_file" ]; then
+        echo -e "${GREEN}${EMOJI_CHECK} Found existing .env file at: $env_file${NC}"
+        echo ""
+        
+        # Verify it has some keys
+        if grep -q "your_" "$env_file" 2>/dev/null; then
+            echo -e "${YELLOW}${EMOJI_WARN} Warning: Your .env file still contains placeholder values.${NC}"
+            echo -e "   ${DIM}Please edit the file and replace placeholders with real API keys.${NC}"
+            echo ""
+            echo -e "   ${CYAN}nano $env_file${NC}"
+            echo ""
+            printf "   Press Enter after you have edited the .env file, or type 'skip' to continue without keys: "
+            local response=""
+            read -r response || true
+            
+            if [ "$response" != "skip" ]; then
+                # Re-check the file
+                if grep -q "your_" "$env_file" 2>/dev/null; then
+                    echo -e "${YELLOW}${EMOJI_WARN} Placeholder values still detected. Continuing anyway...${NC}"
+                fi
+            fi
+        else
+            echo -e "${GREEN}${EMOJI_CHECK} .env file appears to be configured${NC}"
+        fi
+        
+        # Load values from .env file
+        load_env_from_file "$env_file"
+    else
+        echo -e "${YELLOW}${EMOJI_WARN} No .env file found at: $env_file${NC}"
+        echo ""
+        
+        if [ -f "$env_example" ]; then
+            echo -e "   ${DIM}Found .env.example template.${NC}"
+            echo ""
+            echo -e "   ${BOLD}To set up manually:${NC}"
+            echo -e "   ${CYAN}1. cp $env_example $env_file${NC}"
+            echo -e "   ${CYAN}2. nano $env_file${NC}"
+            echo -e "   ${CYAN}3. Replace placeholder values with your actual API keys${NC}"
+            echo ""
+            printf "   Would you like to copy .env.example to .env now? (yes/no) [yes]: "
+            local copy_choice=""
+            read -r copy_choice || true
+            copy_choice=${copy_choice:-yes}
+            
+            if [ "$copy_choice" = "yes" ] || [ "$copy_choice" = "y" ]; then
+                cp "$env_example" "$env_file"
+                chmod 600 "$env_file"
+                echo ""
+                echo -e "${GREEN}${EMOJI_CHECK} Created .env file from template${NC}"
+                echo ""
+                echo -e "${BOLD}${YELLOW}⚠️  IMPORTANT: You MUST edit the .env file before using the CLI!${NC}"
+                echo ""
+                echo -e "   ${CYAN}nano $env_file${NC}"
+                echo ""
+                printf "   Press Enter after you have edited the .env file: "
+                read -r || true
+            else
+                echo ""
+                echo -e "${YELLOW}${EMOJI_WARN} Continuing without .env file. Some features may not work.${NC}"
+            fi
+        else
+            echo -e "${RED}${EMOJI_CROSS} No .env.example template found.${NC}"
+            echo -e "   ${DIM}The repository may be incomplete. Switching to wizard mode...${NC}"
+            INSTALLATION_METHOD="wizard"
+            run_configuration_wizard
+            return
+        fi
+    fi
+    
+    # Set default values for unset variables
+    OPENAI_MODEL="${OPENAI_MODEL:-$DEFAULT_OPENAI_MODEL}"
+    ANTHROPIC_MODEL="${ANTHROPIC_MODEL:-$DEFAULT_ANTHROPIC_MODEL}"
+    GEMINI_MODEL="${GEMINI_MODEL:-$DEFAULT_GEMINI_MODEL}"
+    MOONSHOT_MODEL="${MOONSHOT_MODEL:-$DEFAULT_MOONSHOT_MODEL}"
+    MCP_PORT="${MCP_PORT:-$DEFAULT_MCP_PORT}"
+    AUTO_START="${AUTO_START:-yes}"
+    ENABLE_IOS="${ENABLE_IOS:-no}"
+    
+    echo ""
+    echo -e "${GREEN}Manual configuration setup complete!${NC}"
+    echo ""
+    echo -e "${BOLD}${YELLOW}⚠️  REMEMBER: Always activate the virtual environment before using the CLI:${NC}"
+    echo -e "   ${CYAN}source $INSTALL_DIR/venv/bin/activate${NC}"
+    echo ""
+    
+    STEPS_COMPLETED+=("config_wizard")
+}
+
+# Load environment variables from a file
+load_env_from_file() {
+    local file="$1"
+    
+    if [ -f "$file" ]; then
+        while IFS='=' read -r key value; do
+            # Skip comments and empty lines
+            [[ "$key" =~ ^[[:space:]]*# ]] && continue
+            [[ -z "$key" ]] && continue
+            
+            # Remove leading/trailing whitespace and quotes
+            key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^["\x27]//;s/["\x27]$//')
+            
+            # Map to our variables
+            case "$key" in
+                OPENAI_API_KEY)
+                    OPENAI_KEY="$value"
+                    [ -n "$value" ] && [ "$value" != "your_openai_api_key_here" ] && API_KEY_STATUS[openai]="configured"
+                    ;;
+                ANTHROPIC_API_KEY)
+                    ANTHROPIC_KEY="$value"
+                    [ -n "$value" ] && [ "$value" != "your_anthropic_api_key_here" ] && API_KEY_STATUS[anthropic]="configured"
+                    ;;
+                GEMINI_API_KEY)
+                    GEMINI_KEY="$value"
+                    [ -n "$value" ] && [ "$value" != "your_gemini_api_key_here" ] && API_KEY_STATUS[gemini]="configured"
+                    ;;
+                MOONSHOT_API_KEY)
+                    MOONSHOT_KEY="$value"
+                    [ -n "$value" ] && [ "$value" != "your_moonshot_api_key_here" ] && API_KEY_STATUS[moonshot]="configured"
+                    ;;
+                OPENAI_MODEL) OPENAI_MODEL="$value" ;;
+                ANTHROPIC_MODEL) ANTHROPIC_MODEL="$value" ;;
+                GEMINI_MODEL) GEMINI_MODEL="$value" ;;
+                MOONSHOT_MODEL) MOONSHOT_MODEL="$value" ;;
+                MCP_PORT|MCP_SERVER_PORT) MCP_PORT="$value" ;;
+            esac
+        done < "$file"
+    fi
+}
+
+# ============================================================================
 # Configuration Wizard
 # ============================================================================
 run_configuration_wizard() {
@@ -1393,6 +1580,10 @@ run_configuration_wizard() {
     
     echo ""
     echo -e "${GREEN}Configuration complete!${NC}"
+    echo ""
+    echo -e "${BOLD}${YELLOW}⚠️  REMEMBER: Always activate the virtual environment before using the CLI:${NC}"
+    echo -e "   ${CYAN}source $INSTALL_DIR/venv/bin/activate${NC}"
+    echo ""
     
     STEPS_COMPLETED+=("config_wizard")
 }
@@ -1970,8 +2161,15 @@ main() {
     check_disk_space
     check_network
     
-    # Run configuration wizard (sets INSTALL_DIR)
-    run_configuration_wizard
+    # Ask user which installation method they prefer
+    select_installation_method
+    
+    # Run appropriate configuration method
+    if [ "$INSTALLATION_METHOD" = "manual" ]; then
+        run_manual_setup
+    else
+        run_configuration_wizard
+    fi
     
     # Mark rollback as needed from here
     ROLLBACK_NEEDED=true
@@ -1988,8 +2186,12 @@ main() {
     setup_venv
     install_dependencies
     
-    # Generate configuration
-    generate_env_file
+    # Generate configuration (skip if manual setup with existing .env)
+    if [ "$INSTALLATION_METHOD" != "manual" ] || [ ! -f "$INSTALL_DIR/.env" ]; then
+        generate_env_file
+    else
+        print_info "Using existing .env file (manual setup)"
+    fi
     
     # Setup MCP server
     setup_mcp_server

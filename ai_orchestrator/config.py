@@ -1,10 +1,14 @@
 """Configuration management for AI Orchestrator."""
 
 import os
+import logging
 from pathlib import Path
 from typing import Optional
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+
+# Configure logger for config module
+logger = logging.getLogger(__name__)
 
 
 class ModelConfig(BaseModel):
@@ -231,13 +235,49 @@ class Config(BaseModel):
     
     @classmethod
     def load(cls, env_path: Optional[Path] = None) -> "Config":
-        """Load configuration from environment variables."""
+        """Load configuration from environment variables.
+        
+        Config file search order (first found is used):
+        1. Explicit env_path parameter (if provided)
+        2. ~/.config/ai-orchestrator/config.env (primary user config)
+        3. ~/ai-orchestrator/.env (fallback)
+        4. ./.env (current directory fallback)
+        """
+        config_loaded = False
+        
         if env_path:
-            load_dotenv(env_path)
-        else:
-            # Try loading from current directory or home directory
-            load_dotenv(Path.cwd() / ".env")
-            load_dotenv(Path.home() / ".ai-orchestrator" / ".env")
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+                logger.info(f"Loaded config from: {env_path}")
+                config_loaded = True
+            else:
+                logger.warning(f"Specified config file not found: {env_path}")
+        
+        if not config_loaded:
+            # Define config file search paths in priority order
+            config_paths = [
+                Path.home() / ".config" / "ai-orchestrator" / "config.env",  # Primary
+                Path.home() / "ai-orchestrator" / ".env",  # Fallback
+                Path.cwd() / ".env",  # Current directory fallback
+            ]
+            
+            for config_path in config_paths:
+                if config_path.exists():
+                    load_dotenv(config_path, override=True)
+                    logger.info(f"Loaded config from: {config_path}")
+                    config_loaded = True
+                    break
+                else:
+                    logger.debug(f"Config file not found: {config_path}")
+            
+            if not config_loaded:
+                logger.warning(
+                    "No config file found. Searched locations:\n"
+                    f"  - {config_paths[0]}\n"
+                    f"  - {config_paths[1]}\n"
+                    f"  - {config_paths[2]}\n"
+                    "Using environment variables or defaults."
+                )
         
         # Helper to get int from env with default
         def get_int(key: str, default: int) -> int:

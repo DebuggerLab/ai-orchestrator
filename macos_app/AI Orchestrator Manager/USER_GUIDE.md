@@ -97,7 +97,7 @@ Before you begin, ensure your Mac meets these requirements:
    | Provider | Recommended Model |
    |----------|-------------------|
    | OpenAI | gpt-4o-mini |
-   | Anthropic | claude-3-5-sonnet-20241022 |
+   | Anthropic | claude-3-5-sonnet-20240620 |
    | Google | gemini-2.5-flash |
    | Moonshot | moonshot-v1-8k |
 

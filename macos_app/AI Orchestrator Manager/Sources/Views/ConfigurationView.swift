@@ -17,7 +17,7 @@ struct ConfigurationView: View {
     @State private var moonshotKey = ""
     
     @State private var openAIModel = "gpt-4o-mini"
-    @State private var anthropicModel = "claude-3-5-sonnet-20241022"
+    @State private var anthropicModel = "claude-3-5-sonnet-20240620"
     @State private var geminiModel = "gemini-2.5-flash"
     @State private var moonshotModel = "moonshot-v1-8k"
     
@@ -30,7 +30,7 @@ struct ConfigurationView: View {
     @State private var testingAPI: String?
     
     let openAIModels = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
-    let anthropicModels = ["claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"]
+    let anthropicModels = ["claude-3-5-sonnet-20240620", "claude-sonnet-4-6", "claude-opus-4-6", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
     let geminiModels = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-pro", "gemini-1.5-flash"]
     let moonshotModels = ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"]
     

@@ -84,7 +84,7 @@ The configuration wizard will prompt for:
 | Google Gemini API Key | - | For Gemini models |
 | Moonshot API Key | - | For Kimi models |
 | OpenAI Model | `gpt-4o-mini` | Default OpenAI model |
-| Anthropic Model | `claude-3-5-sonnet-20241022` | Default Claude model |
+| Anthropic Model | `claude-3-5-sonnet-20240620` | Default Claude model |
 | Gemini Model | `gemini-2.5-flash` | Default Gemini model |
 | MCP Server Port | `3000` | Port for MCP server |
 | Auto-start on login | `yes` | Start server automatically |

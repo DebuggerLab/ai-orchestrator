@@ -883,10 +883,15 @@ Update your `.env` file with current model names:
 
 ```env
 OPENAI_MODEL=gpt-4o-mini
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 ```
+
+> 💡 **Note**: Model names change frequently. Check the official documentation for the latest:
+> - [Anthropic Models](https://docs.anthropic.com/en/docs/about-claude/models)
+> - [OpenAI Models](https://platform.openai.com/docs/models)
+> - [Gemini Models](https://ai.google.dev/gemini-api/docs/models/gemini)
 
 #### API Keys Not Found / "All models show Not configured"
 

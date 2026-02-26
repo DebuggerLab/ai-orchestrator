@@ -27,7 +27,7 @@ class ModelConfig(BaseModel):
     the latest version of the respective model family.
     """
     openai_model: str = Field(default="gpt-4o-mini")
-    anthropic_model: str = Field(default="claude-3-5-sonnet-20241022")
+    anthropic_model: str = Field(default="claude-3-5-sonnet-20240620")
     gemini_model: str = Field(default="gemini-2.5-flash")
     moonshot_model: str = Field(default="moonshot-v1-8k")
 
@@ -307,7 +307,7 @@ def _build_config_from_env() -> dict:
         'moonshot_api_key': os.getenv("MOONSHOT_API_KEY"),
         'models': ModelConfig(
             openai_model=os.getenv("OPENAI_MODEL", os.getenv("DEFAULT_ARCHITECTURE_MODEL", "gpt-4o-mini")),
-            anthropic_model=os.getenv("ANTHROPIC_MODEL", os.getenv("DEFAULT_CODING_MODEL", "claude-3-5-sonnet-20241022")),
+            anthropic_model=os.getenv("ANTHROPIC_MODEL", os.getenv("DEFAULT_CODING_MODEL", "claude-3-5-sonnet-20240620")),
             gemini_model=os.getenv("GEMINI_MODEL", os.getenv("DEFAULT_REASONING_MODEL", "gemini-2.5-flash")),
             moonshot_model=os.getenv("MOONSHOT_MODEL", os.getenv("DEFAULT_REVIEW_MODEL", "moonshot-v1-8k")),
         ),

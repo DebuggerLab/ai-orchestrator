@@ -79,7 +79,7 @@ MOONSHOT_API_KEY=sk-your-moonshot-key-here
 
 # Model Configuration (optional)
 OPENAI_MODEL=gpt-4o-mini
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 EOF

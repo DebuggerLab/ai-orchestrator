@@ -76,7 +76,7 @@ MOONSHOT_API_KEY=YOUR_MOONSHOT_KEY_HERE
 OPENAI_MODEL=gpt-4o-mini
 
 # Anthropic Model (coding, implementation, debugging)
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 
 # Google Gemini Model (reasoning, logic, test design)
 GEMINI_MODEL=gemini-2.5-flash
@@ -168,7 +168,7 @@ echo "  📄 Config File: $CONFIG_FILE"
 echo ""
 echo -e "${CYAN}Enabled Models:${NC}"
 echo "  🤖 OpenAI:    gpt-4o-mini (architecture, planning)"
-echo "  🧠 Anthropic: claude-3-5-sonnet-20241022 (coding, debugging)"
+echo "  🧠 Anthropic: claude-3-5-sonnet-20240620 (coding, debugging)"
 echo "  💎 Gemini:    gemini-2.5-flash (reasoning, tests)"
 echo "  🌙 Moonshot:  moonshot-v1-8k (code review)"
 echo ""

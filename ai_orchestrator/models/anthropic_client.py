@@ -11,7 +11,7 @@ class AnthropicClient(BaseModelClient):
     provider_name = "Anthropic"
     specialties = [TaskType.CODING, TaskType.DEBUGGING, TaskType.DOCUMENTATION]
     
-    def __init__(self, api_key: str, model_name: str = "claude-3-5-sonnet-20241022"):
+    def __init__(self, api_key: str, model_name: str = "claude-3-5-sonnet-20240620"):
         super().__init__(api_key, model_name)
         self.client = anthropic.Anthropic(api_key=api_key)
     

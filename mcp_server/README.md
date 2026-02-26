@@ -63,7 +63,7 @@ Required API keys (at least one):
 
 Optional model configuration:
 - `OPENAI_MODEL` - Default: `gpt-4o-mini`
-- `ANTHROPIC_MODEL` - Default: `claude-3-5-sonnet-20241022`
+- `ANTHROPIC_MODEL` - Default: `claude-3-5-sonnet-20240620`
 - `GEMINI_MODEL` - Default: `gemini-2.5-flash`
 - `MOONSHOT_MODEL` - Default: `moonshot-v1-8k`
 
@@ -78,7 +78,7 @@ MOONSHOT_API_KEY=sk-...
 
 # Optional: Custom model names
 OPENAI_MODEL=gpt-4o
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 GEMINI_MODEL=gemini-2.5-flash
 
 # Auto-fix settings (optional)
@@ -243,7 +243,7 @@ Send directly to a specific model.
 ```json
 {
   "success": true,
-  "model_name": "claude-3-5-sonnet-20241022",
+  "model_name": "claude-3-5-sonnet-20240620",
   "model_provider": "anthropic",
   "content": "..."
 }

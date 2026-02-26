@@ -24,7 +24,7 @@ struct APIConfiguration: Codable {
         geminiKey: "",
         moonshotKey: "",
         openAIModel: "gpt-4o-mini",
-        anthropicModel: "claude-3-5-sonnet-20241022",
+        anthropicModel: "claude-3-5-sonnet-20240620",
         geminiModel: "gemini-2.5-flash",
         moonshotModel: "moonshot-v1-8k"
     )

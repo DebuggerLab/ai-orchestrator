@@ -2,12 +2,18 @@
 
 This document provides detailed information about available models for each AI provider supported by AI Orchestrator.
 
+> ⚠️ **Important**: Model names and availability change frequently. Always check the official documentation for the latest model names:
+> - **Anthropic**: https://docs.anthropic.com/en/docs/about-claude/models
+> - **OpenAI**: https://platform.openai.com/docs/models
+> - **Google Gemini**: https://ai.google.dev/gemini-api/docs/models/gemini
+> - **Moonshot**: https://platform.moonshot.cn/docs
+
 ## 🎯 Quick Reference
 
 | Provider | Default Model | Recommended For | Access Level |
 |----------|--------------|-----------------|--------------|
 | OpenAI | `gpt-4o-mini` | Architecture, Planning | Standard API |
-| Anthropic | `claude-3-5-sonnet-20241022` | Coding, Implementation | Standard API |
+| Anthropic | `claude-3-5-sonnet-20240620` | Coding, Implementation | Standard API |
 | Google | `gemini-2.5-flash` | Reasoning, Analysis | Standard API |
 | Moonshot | `moonshot-v1-8k` | Code Review | Standard API |
 
@@ -62,7 +68,7 @@ OPENAI_MODEL=gpt-4o-mini
 
 | Model | Context Window | Speed | Cost | Access |
 |-------|---------------|-------|------|--------|
-| `claude-3-5-sonnet-20241022` ⭐ | 200K | Fast | $$ | Standard |
+| `claude-3-5-sonnet-20240620` ⭐ | 200K | Fast | $$ | Standard |
 | `claude-3-5-haiku-20241022` | 200K | Very Fast | $ | Standard |
 | `claude-3-opus-20240229` | 200K | Slower | $$$$ | Standard |
 
@@ -70,7 +76,7 @@ OPENAI_MODEL=gpt-4o-mini
 
 ### Model Selection Guide
 
-- **`claude-3-5-sonnet-20241022`** (Default): Excellent coding capabilities, great balance of speed and quality.
+- **`claude-3-5-sonnet-20240620`** (Default): Excellent coding capabilities, great balance of speed and quality.
 - **`claude-3-5-haiku-20241022`**: Fastest Claude model. Good for quick coding tasks.
 - **`claude-3-opus-20240229`**: Most capable but slower and more expensive. Use for complex implementations.
 
@@ -78,7 +84,7 @@ OPENAI_MODEL=gpt-4o-mini
 
 ```env
 # In your .env file
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 ```
 
 ### Access Requirements

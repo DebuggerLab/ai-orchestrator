@@ -24,7 +24,7 @@ class ConfigurationManager: ObservableObject {
             geminiKey: getKeychainItem("gemini_api_key") ?? "",
             moonshotKey: getKeychainItem("moonshot_api_key") ?? "",
             openAIModel: UserDefaults.standard.string(forKey: "openai_model") ?? "gpt-4o-mini",
-            anthropicModel: UserDefaults.standard.string(forKey: "anthropic_model") ?? "claude-3-5-sonnet-20241022",
+            anthropicModel: UserDefaults.standard.string(forKey: "anthropic_model") ?? "claude-3-5-sonnet-20240620",
             geminiModel: UserDefaults.standard.string(forKey: "gemini_model") ?? "gemini-2.5-flash",
             moonshotModel: UserDefaults.standard.string(forKey: "moonshot_model") ?? "moonshot-v1-8k"
         )

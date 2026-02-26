@@ -154,7 +154,7 @@ Replace `your-actual-*-key` with your real API keys.
 
 ### Pre-configured Models
 - **OpenAI** (gpt-4o-mini) - Architecture planning and roadmap generation
-- **Anthropic** (claude-3-5-sonnet-20241022) - Coding and debugging
+- **Anthropic** (claude-3-5-sonnet-20240620) - Coding and debugging
 - **Google Gemini** (gemini-2.5-flash) - Reasoning and test design
 - **Moonshot/Kimi** (moonshot-v1-8k) - Code review
 

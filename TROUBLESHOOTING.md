@@ -218,7 +218,7 @@ error: no such module 'XcodeKit'
 2. Reduce input size for large codebases
 3. Try a different model:
    ```env
-   ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+   ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
    OPENAI_MODEL=gpt-4o-mini
    ```
 

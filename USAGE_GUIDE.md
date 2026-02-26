@@ -230,7 +230,7 @@ Output:
 Debug: Config loaded from default locations
 Debug: Prompt: Test prompt
 Debug: Creating anthropic client...
-Debug: Model name: claude-3-5-sonnet-20241022
+Debug: Model name: claude-3-5-sonnet-20240620
 Debug: Sending request to anthropic...
 Debug: Response received
 Debug: Success: True
@@ -510,7 +510,7 @@ MOONSHOT_API_KEY=sk-...
 
 # Model Names (optional overrides)
 OPENAI_MODEL=gpt-4o-mini
-ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+ANTHROPIC_MODEL=claude-3-5-sonnet-20240620
 GEMINI_MODEL=gemini-2.5-flash
 MOONSHOT_MODEL=moonshot-v1-8k
 

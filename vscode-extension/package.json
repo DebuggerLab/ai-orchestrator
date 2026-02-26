@@ -1,0 +1,267 @@
+{
+  "name": "ai-orchestrator",
+  "displayName": "AI Orchestrator - Multi-Model AI Assistant",
+  "description": "Intelligently orchestrate multiple AI models (ChatGPT, Claude, Gemini, Kimi) for complex development tasks with automatic routing, parallel execution, and unified results",
+  "version": "1.2.0",
+  "publisher": "debugger-lab",
+  "author": {
+    "name": "Debugger Lab",
+    "email": "support@debuggerlab.com",
+    "url": "https://debuggerlab.com"
+  },
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e2e",
+    "theme": "dark"
+  },
+  "badges": [
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/v/debugger-lab.ai-orchestrator",
+      "href": "https://marketplace.visualstudio.com/items?itemName=debugger-lab.ai-orchestrator",
+      "description": "VS Marketplace Version"
+    },
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/i/debugger-lab.ai-orchestrator",
+      "href": "https://marketplace.visualstudio.com/items?itemName=debugger-lab.ai-orchestrator",
+      "description": "Installs"
+    },
+    {
+      "url": "https://img.shields.io/visual-studio-marketplace/r/debugger-lab.ai-orchestrator",
+      "href": "https://marketplace.visualstudio.com/items?itemName=debugger-lab.ai-orchestrator",
+      "description": "Rating"
+    }
+  ],
+  "homepage": "https://github.com/DebuggerLab/ai-orchestrator/tree/vscode-extension",
+  "bugs": {
+    "url": "https://github.com/DebuggerLab/ai-orchestrator/issues",
+    "email": "support@debuggerlab.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DebuggerLab/ai-orchestrator.git",
+    "directory": "vscode-extension"
+  },
+  "qna": "https://github.com/DebuggerLab/ai-orchestrator/discussions",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "artificial intelligence",
+    "chatgpt",
+    "claude",
+    "gemini",
+    "kimi",
+    "moonshot",
+    "openai",
+    "anthropic",
+    "google",
+    "orchestration",
+    "multi-model",
+    "llm",
+    "large language model",
+    "code assistant",
+    "ai assistant",
+    "copilot",
+    "code review",
+    "code generation"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ai-orchestrator",
+          "title": "AI Orchestrator",
+          "icon": "media/orchestrator.svg"
+        }
+      ]
+    },
+    "views": {
+      "ai-orchestrator": [
+        {
+          "type": "webview",
+          "id": "aiOrchestrator.chatView",
+          "name": "Chat"
+        },
+        {
+          "id": "aiOrchestrator.historyView",
+          "name": "Task History"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "aiOrchestrator.runTask",
+        "title": "AI Orchestrator: Run Task",
+        "icon": "$(play)"
+      },
+      {
+        "command": "aiOrchestrator.configure",
+        "title": "AI Orchestrator: Configure",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "aiOrchestrator.checkStatus",
+        "title": "AI Orchestrator: Check Status",
+        "icon": "$(info)"
+      },
+      {
+        "command": "aiOrchestrator.sendToOrchestrator",
+        "title": "Send to AI Orchestrator",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "aiOrchestrator.clearHistory",
+        "title": "AI Orchestrator: Clear History",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "aiOrchestrator.rerunTask",
+        "title": "Re-run Task",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "aiOrchestrator.exportToMarkdown",
+        "title": "Export to Markdown",
+        "icon": "$(markdown)"
+      },
+      {
+        "command": "aiOrchestrator.refreshHistory",
+        "title": "Refresh History",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "aiOrchestrator.sendToOrchestrator",
+          "when": "editorHasSelection",
+          "group": "ai-orchestrator"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "aiOrchestrator.clearHistory",
+          "when": "view == aiOrchestrator.historyView",
+          "group": "navigation"
+        },
+        {
+          "command": "aiOrchestrator.refreshHistory",
+          "when": "view == aiOrchestrator.historyView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "aiOrchestrator.rerunTask",
+          "when": "view == aiOrchestrator.historyView",
+          "group": "inline"
+        },
+        {
+          "command": "aiOrchestrator.exportToMarkdown",
+          "when": "view == aiOrchestrator.historyView",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI Orchestrator",
+      "properties": {
+        "aiOrchestrator.openai.model": {
+          "type": "string",
+          "default": "gpt-4o-mini",
+          "description": "OpenAI model to use for architecture/roadmap tasks",
+          "enum": ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
+        },
+        "aiOrchestrator.anthropic.model": {
+          "type": "string",
+          "default": "claude-3-5-sonnet-20240620",
+          "description": "Anthropic Claude model to use for coding tasks",
+          "enum": ["claude-3-5-sonnet-20240620", "claude-sonnet-4-6", "claude-opus-4-6", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
+        },
+        "aiOrchestrator.gemini.model": {
+          "type": "string",
+          "default": "gemini-2.5-flash",
+          "description": "Google Gemini model to use for reasoning tasks",
+          "enum": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-pro", "gemini-1.5-flash"]
+        },
+        "aiOrchestrator.moonshot.model": {
+          "type": "string",
+          "default": "moonshot-v1-8k",
+          "description": "Moonshot (Kimi) model to use for code review tasks",
+          "enum": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"]
+        },
+        "aiOrchestrator.routing.preferredArchitectureModel": {
+          "type": "string",
+          "default": "openai",
+          "description": "Preferred model for architecture tasks",
+          "enum": ["openai", "anthropic", "gemini", "moonshot"]
+        },
+        "aiOrchestrator.routing.preferredCodingModel": {
+          "type": "string",
+          "default": "anthropic",
+          "description": "Preferred model for coding tasks",
+          "enum": ["openai", "anthropic", "gemini", "moonshot"]
+        },
+        "aiOrchestrator.routing.preferredReasoningModel": {
+          "type": "string",
+          "default": "gemini",
+          "description": "Preferred model for reasoning tasks",
+          "enum": ["openai", "anthropic", "gemini", "moonshot"]
+        },
+        "aiOrchestrator.routing.preferredReviewModel": {
+          "type": "string",
+          "default": "moonshot",
+          "description": "Preferred model for code review tasks",
+          "enum": ["openai", "anthropic", "gemini", "moonshot"]
+        },
+        "aiOrchestrator.ui.showDetailedProgress": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show detailed progress for each model during orchestration"
+        },
+        "aiOrchestrator.history.maxItems": {
+          "type": "number",
+          "default": 50,
+          "description": "Maximum number of tasks to keep in history"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  },
+  "dependencies": {
+    "openai": "^4.20.0",
+    "@anthropic-ai/sdk": "^0.10.0",
+    "@google/generative-ai": "^0.21.0",
+    "marked": "^11.0.0",
+    "highlight.js": "^11.9.0"
+  }
+}

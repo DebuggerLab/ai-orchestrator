@@ -1,0 +1,57 @@
+# Source files
+.vscode/**
+src/**
+**/*.ts
+!dist/**/*.d.ts
+
+# Build artifacts
+out/**
+*.map
+
+# Config and tooling
+.eslintrc.json
+.gitignore
+tsconfig.json
+webpack.config.js
+.prettierrc
+
+# Documentation (keep README, LICENSE, CHANGELOG)
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+PUBLISHING.md
+docs/**
+
+# Test files
+test/**
+**/*.test.ts
+**/*.spec.ts
+
+# Git
+.git/**
+.github/**
+
+# Development
+node_modules/**
+!node_modules/marked/**
+!node_modules/highlight.js/**
+.vscode-test/**
+
+# Package files
+*.vsix
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log
+yarn.lock
+package-lock.json
+
+# Keep essential files
+!package.json
+!README.md
+!LICENSE
+!CHANGELOG.md
+!media/**
+!dist/**
+*.pdf

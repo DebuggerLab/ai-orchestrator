@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1e2e"/>
+      <stop offset="50%" style="stop-color:#2d2d44"/>
+      <stop offset="100%" style="stop-color:#1e1e2e"/>
+    </linearGradient>
+    <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#a855f7"/>
+    </linearGradient>
+    <linearGradient id="glow-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c084fc"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background with rounded corners -->
+  <rect width="128" height="128" rx="22" fill="url(#bg-gradient)"/>
+  
+  <!-- Outer glow ring -->
+  <circle cx="64" cy="58" r="38" stroke="url(#accent-gradient)" stroke-width="1.5" fill="none" opacity="0.4"/>
+  
+  <!-- Connection lines to nodes -->
+  <line x1="64" y1="58" x2="64" y2="24" stroke="url(#glow-gradient)" stroke-width="2" opacity="0.8"/>
+  <line x1="64" y1="58" x2="96" y2="58" stroke="url(#glow-gradient)" stroke-width="2" opacity="0.8"/>
+  <line x1="64" y1="58" x2="64" y2="92" stroke="url(#glow-gradient)" stroke-width="2" opacity="0.8"/>
+  <line x1="64" y1="58" x2="32" y2="58" stroke="url(#glow-gradient)" stroke-width="2" opacity="0.8"/>
+  
+  <!-- Diagonal connections -->
+  <line x1="64" y1="58" x2="88" y2="34" stroke="url(#glow-gradient)" stroke-width="1.5" opacity="0.5"/>
+  <line x1="64" y1="58" x2="88" y2="82" stroke="url(#glow-gradient)" stroke-width="1.5" opacity="0.5"/>
+  <line x1="64" y1="58" x2="40" y2="82" stroke="url(#glow-gradient)" stroke-width="1.5" opacity="0.5"/>
+  <line x1="64" y1="58" x2="40" y2="34" stroke="url(#glow-gradient)" stroke-width="1.5" opacity="0.5"/>
+  
+  <!-- Central hub (orchestrator) -->
+  <circle cx="64" cy="58" r="16" fill="url(#accent-gradient)" filter="url(#glow)"/>
+  <circle cx="64" cy="58" r="8" fill="#fff"/>
+  <circle cx="64" cy="58" r="4" fill="#7c3aed"/>
+  
+  <!-- AI Model nodes -->
+  <!-- Top (OpenAI - Green) -->
+  <circle cx="64" cy="24" r="9" fill="#10a37f"/>
+  <text x="64" y="28" text-anchor="middle" fill="white" font-size="10" font-weight="bold" font-family="Arial, sans-serif">O</text>
+  
+  <!-- Top-right (diagonal) -->
+  <circle cx="88" cy="34" r="6" fill="#4285f4" opacity="0.7"/>
+  
+  <!-- Right (Anthropic - Orange/Tan) -->
+  <circle cx="96" cy="58" r="9" fill="#d97757"/>
+  <text x="96" y="62" text-anchor="middle" fill="white" font-size="10" font-weight="bold" font-family="Arial, sans-serif">A</text>
+  
+  <!-- Bottom-right (diagonal) -->
+  <circle cx="88" cy="82" r="6" fill="#22c55e" opacity="0.7"/>
+  
+  <!-- Bottom (Gemini - Blue) -->
+  <circle cx="64" cy="92" r="9" fill="#4285f4"/>
+  <text x="64" y="96" text-anchor="middle" fill="white" font-size="10" font-weight="bold" font-family="Arial, sans-serif">G</text>
+  
+  <!-- Bottom-left (diagonal) -->
+  <circle cx="40" cy="82" r="6" fill="#f59e0b" opacity="0.7"/>
+  
+  <!-- Left (Moonshot/Kimi - Purple) -->
+  <circle cx="32" cy="58" r="9" fill="#8b5cf6"/>
+  <text x="32" y="62" text-anchor="middle" fill="white" font-size="10" font-weight="bold" font-family="Arial, sans-serif">K</text>
+  
+  <!-- Top-left (diagonal) -->
+  <circle cx="40" cy="34" r="6" fill="#ec4899" opacity="0.7"/>
+  
+  <!-- Debugger Lab text at bottom -->
+  <text x="64" y="118" text-anchor="middle" fill="#a855f7" font-size="9" font-weight="600" font-family="Arial, sans-serif" letter-spacing="1">DEBUGGER LAB</text>
+</svg>

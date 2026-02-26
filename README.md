@@ -12,6 +12,7 @@ A powerful Python CLI tool that intelligently orchestrates multiple AI models fo
 - [Features](#-features)
 - [Quick Start](#-quick-start)
 - [IDE Integration Overview](#-ide-integration-overview)
+- [VS Code Extension](#-vs-code-extension)
 - [Cursor IDE Setup](#-cursor-ide-setup)
 - [Xcode Extension Setup](#-xcode-extension-setup)
 - [Configuration](#️-configuration)
@@ -34,7 +35,7 @@ A powerful Python CLI tool that intelligently orchestrates multiple AI models fo
 - **Verification Loop**: Iterative run → test → fix cycle until all tests pass
 - **Beautiful CLI Output**: Rich formatting with progress indicators and colored output
 - **Error Handling**: Graceful fallback when models are unavailable
-- **IDE Integration**: Works with Cursor IDE (MCP) and Xcode Extension
+- **IDE Integration**: Works with VS Code, Cursor IDE (MCP), and Xcode Extension
 
 ### 🏗️ Model Specializations
 
@@ -145,33 +146,77 @@ ai-orchestrator run "Design a REST API for a todo application"
 
 ## 🎯 IDE Integration Overview
 
-AI Orchestrator integrates with two major IDEs, each with different capabilities:
+AI Orchestrator integrates with three major development environments, each with different capabilities:
 
 ### Feature Comparison
 
-| Feature | Cursor IDE (MCP) | Xcode Extension |
-|---------|------------------|-----------------|
-| **Setup Complexity** | Easy (auto-config) | Medium (manual enable) |
-| **Task Routing** | ✅ Full support | ✅ Full support |
-| **Code Generation** | ✅ In-editor | ✅ In-editor |
-| **Project Execution** | ✅ Full workflow | ⚠️ Build only |
-| **Auto-Fix Loop** | ✅ Automated | ⚠️ Manual trigger |
-| **iOS Simulator** | ❌ N/A | ✅ Native support |
-| **Swift/SwiftUI** | ⚠️ Basic | ✅ Optimized |
-| **Multi-file Edits** | ✅ Supported | ⚠️ Single file |
-| **Real-time Chat** | ✅ MCP chat | ❌ Commands only |
+| Feature | VS Code Extension | Cursor IDE (MCP) | Xcode Extension |
+|---------|-------------------|------------------|-----------------|
+| **Setup Complexity** | Easy (marketplace) | Easy (auto-config) | Medium (manual enable) |
+| **Task Routing** | ✅ Full support | ✅ Full support | ✅ Full support |
+| **Code Generation** | ✅ In-editor | ✅ In-editor | ✅ In-editor |
+| **Project Execution** | ⚠️ Via terminal | ✅ Full workflow | ⚠️ Build only |
+| **Auto-Fix Loop** | ⚠️ Manual trigger | ✅ Automated | ⚠️ Manual trigger |
+| **iOS Simulator** | ❌ N/A | ❌ N/A | ✅ Native support |
+| **Swift/SwiftUI** | ⚠️ Basic | ⚠️ Basic | ✅ Optimized |
+| **Multi-file Edits** | ✅ Supported | ✅ Supported | ⚠️ Single file |
+| **Real-time Chat** | ✅ Chat panel | ✅ MCP chat | ❌ Commands only |
+| **Task History** | ✅ Built-in | ⚠️ Manual | ❌ N/A |
 
 ### When to Use Which
 
 | Use Case | Recommended IDE |
 |----------|-----------------|
-| Web development (JS/TS/Python) | **Cursor IDE** |
+| General development (any language) | **VS Code Extension** |
+| Web development (JS/TS/Python) | **VS Code** or **Cursor IDE** |
 | iOS/macOS development | **Xcode Extension** |
 | Full-stack projects | **Cursor IDE** |
 | SwiftUI prototyping | **Xcode Extension** |
-| Code review & refactoring | **Both work well** |
-| Multi-model orchestration | **Cursor IDE** |
+| Code review & refactoring | **All work well** |
+| Multi-model orchestration | **VS Code** or **Cursor IDE** |
 | XCTest integration | **Xcode Extension** |
+
+---
+
+## 💻 VS Code Extension
+
+The VS Code extension brings AI Orchestrator's multi-model capabilities directly into Visual Studio Code.
+
+### Installation
+
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=debugger-lab.ai-orchestrator) or search for "AI Orchestrator" in VS Code Extensions.
+
+### Features
+
+- 🎯 **Intelligent Routing**: Tasks automatically routed to the best AI model
+- 💬 **Chat Interface**: Modern chat panel for interacting with AI models
+- 📜 **Task History**: Browse, re-run, and export past orchestrations
+- ⚡ **Context Menu**: Right-click code to send to AI Orchestrator
+- 🎨 **Syntax Highlighting**: Beautiful code formatting in responses
+
+### Configuration
+
+1. Open VS Code Settings (`Ctrl+,` or `Cmd+,`)
+2. Search for "AI Orchestrator"
+3. Add your API keys for the models you want to use
+
+### Branch Info
+
+The VS Code extension lives in the `vscode-extension` branch:
+
+```bash
+# Clone and switch to the extension branch
+git clone https://github.com/DebuggerLab/ai-orchestrator.git
+cd ai-orchestrator
+git checkout vscode-extension
+
+# Extension source is in vscode-extension/ directory
+cd vscode-extension
+npm install
+npm run compile
+```
+
+📚 **Full documentation**: See [vscode-extension/README.md](https://github.com/DebuggerLab/ai-orchestrator/blob/vscode-extension/vscode-extension/README.md)
 
 ---
 

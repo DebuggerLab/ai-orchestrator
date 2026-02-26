@@ -34,8 +34,23 @@ env/
 
 # Environment variables
 .env
+.env.*
+*.env
+
+# Config files with secrets (NEVER commit these)
+config.env
+**/config.env
+~/.config/ai-orchestrator/
+.config/ai-orchestrator/
+secrets.json
+**/secrets.json
+*.secret
+*.secrets
 
 # OS
 .DS_Store
 Thumbs.db
 logs/
+
+# Local key injection script (contains real API keys)
+inject-dev-keys.sh

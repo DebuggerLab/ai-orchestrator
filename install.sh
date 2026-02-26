@@ -1078,6 +1078,40 @@ get_key_example() {
     esac
 }
 
+# Sanitize API key input - extracts the actual key from user input
+# Handles cases like "Chat gpt = sk-xxx", "OpenAI: sk-xxx", "API key: sk-xxx"
+sanitize_api_key_input() {
+    local input="$1"
+    local sanitized=""
+    
+    # Remove leading/trailing whitespace
+    sanitized=$(echo "$input" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    
+    # Check if input contains "=" or ":" - extract the value after it
+    if [[ "$sanitized" == *"="* ]]; then
+        # Extract everything after the last "="
+        sanitized="${sanitized##*=}"
+        sanitized=$(echo "$sanitized" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    elif [[ "$sanitized" == *":"* ]]; then
+        # Extract everything after the last ":"
+        sanitized="${sanitized##*:}"
+        sanitized=$(echo "$sanitized" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    fi
+    
+    # Remove any surrounding quotes (single or double)
+    sanitized=$(echo "$sanitized" | sed "s/^['\"]//;s/['\"]$//")
+    
+    echo "$sanitized"
+}
+
+# Safely assign a value to a variable by name (avoids eval issues with special characters)
+# Usage: safe_assign "variable_name" "value"
+safe_assign() {
+    local var_name="$1"
+    local value="$2"
+    printf -v "$var_name" '%s' "$value"
+}
+
 # Prompt for API key with validation and confirmation
 # Usage: prompt_api_key "variable_name" "Service Name" "service_id" "required|optional"
 prompt_api_key() {
@@ -1086,37 +1120,44 @@ prompt_api_key() {
     local service_id="$3"
     local requirement="$4"  # "required" or "optional"
     local user_input=""
+    local sanitized_input=""
     local key_valid=false
     local max_attempts=3
     local attempt=0
     
+    echo ""  # Add spacing before each API key prompt for clarity
+    
     while [ "$key_valid" = false ] && [ $attempt -lt $max_attempts ]; do
         attempt=$((attempt + 1))
         
-        # Display prompt
+        # Display prompt with clear label
         if [ "$requirement" = "optional" ]; then
-            printf "   ${CYAN}$service_display_name API Key${NC} ${DIM}(optional, press Enter to skip)${NC}: "
+            echo -e "   ${CYAN}[$attempt/$max_attempts] $service_display_name API Key${NC} ${DIM}(optional, press Enter to skip)${NC}"
         else
-            printf "   ${CYAN}$service_display_name API Key${NC}: "
+            echo -e "   ${CYAN}[$attempt/$max_attempts] $service_display_name API Key${NC} ${DIM}(recommended)${NC}"
         fi
+        printf "   Enter key: "
         
         # Read user input
-        read -r user_input
+        read -r user_input || true  # Prevent exit on read failure with set -e
         
-        # Check if empty
-        if [ -z "$user_input" ]; then
+        # Sanitize the input (handles "Chat gpt = sk-xxx" type inputs)
+        sanitized_input=$(sanitize_api_key_input "$user_input")
+        
+        # Check if empty (after sanitization)
+        if [ -z "$sanitized_input" ]; then
             # Ask for confirmation to skip
             if [ "$requirement" = "required" ]; then
                 echo ""
                 echo -e "   ${YELLOW}${EMOJI_WARN} No API key provided for $service_display_name.${NC}"
                 echo -e "   ${DIM}This key is recommended for the orchestrator to work properly.${NC}"
-                printf "   ${WHITE}Continue without $service_display_name API key? (yes/no) [no]: ${NC}"
+                printf "   Continue without $service_display_name API key? (yes/no) [no]: "
                 local confirm=""
-                read -r confirm
+                read -r confirm || true
                 confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
                 
                 if [ "$confirm" = "yes" ] || [ "$confirm" = "y" ]; then
-                    eval "$var_name=\"\""
+                    safe_assign "$var_name" ""
                     API_KEY_STATUS[$service_id]="skipped"
                     echo -e "   ${DIM}→ $service_display_name key skipped (can be added later)${NC}"
                     key_valid=true
@@ -1128,22 +1169,27 @@ prompt_api_key() {
                 fi
             else
                 # Optional key - skip without confirmation
-                eval "$var_name=\"\""
+                safe_assign "$var_name" ""
                 API_KEY_STATUS[$service_id]="skipped"
                 echo -e "   ${DIM}→ $service_display_name key skipped (optional)${NC}"
                 key_valid=true
             fi
         else
+            # Show what we extracted if it differs from input
+            if [ "$sanitized_input" != "$user_input" ]; then
+                echo -e "   ${DIM}   (Extracted key from input)${NC}"
+            fi
+            
             # Validate the key format
-            validate_api_key_format "$service_id" "$user_input"
+            validate_api_key_format "$service_id" "$sanitized_input"
             local validation_result=$?
             
             if [ $validation_result -eq 0 ]; then
-                # Key is valid
-                eval "$var_name=\"\$user_input\""
+                # Key is valid - use safe assignment instead of eval
+                safe_assign "$var_name" "$sanitized_input"
                 API_KEY_STATUS[$service_id]="configured"
                 # Show masked key for confirmation
-                local masked_key="${user_input:0:8}...${user_input: -4}"
+                local masked_key="${sanitized_input:0:8}...${sanitized_input: -4}"
                 echo -e "   ${GREEN}${EMOJI_CHECK} Valid key format${NC} ${DIM}($masked_key)${NC}"
                 key_valid=true
             else
@@ -1154,29 +1200,29 @@ prompt_api_key() {
                 echo -e "   ${DIM}   Expected format: $(get_key_example $service_id)${NC}"
                 echo ""
                 
-                printf "   ${WHITE}Options:${NC}\n"
-                printf "   ${WHITE}  [1]${NC} Re-enter the key\n"
-                printf "   ${WHITE}  [2]${NC} Use this key anyway (may not work)\n"
+                echo -e "   ${WHITE}Options:${NC}"
+                echo -e "   ${WHITE}  [1]${NC} Re-enter the key"
+                echo -e "   ${WHITE}  [2]${NC} Use this key anyway (may not work)"
                 if [ "$requirement" = "optional" ]; then
-                    printf "   ${WHITE}  [3]${NC} Skip this key\n"
+                    echo -e "   ${WHITE}  [3]${NC} Skip this key"
                 fi
-                printf "   ${WHITE}Choice [1]: ${NC}"
+                printf "   Choice [1]: "
                 
                 local choice=""
-                read -r choice
+                read -r choice || true
                 choice=${choice:-1}
                 
                 case "$choice" in
                     2)
-                        # Use the key anyway
-                        eval "$var_name=\"\$user_input\""
+                        # Use the key anyway - safe assignment
+                        safe_assign "$var_name" "$sanitized_input"
                         API_KEY_STATUS[$service_id]="configured_unverified"
                         echo -e "   ${YELLOW}→ Using key (format not verified)${NC}"
                         key_valid=true
                         ;;
                     3)
                         if [ "$requirement" = "optional" ]; then
-                            eval "$var_name=\"\""
+                            safe_assign "$var_name" ""
                             API_KEY_STATUS[$service_id]="skipped"
                             echo -e "   ${DIM}→ $service_display_name key skipped${NC}"
                             key_valid=true
@@ -1198,7 +1244,7 @@ prompt_api_key() {
     # If we've exceeded max attempts for a required key, mark as skipped
     if [ "$key_valid" = false ]; then
         echo -e "   ${YELLOW}${EMOJI_WARN} Maximum attempts reached. Skipping $service_display_name key.${NC}"
-        eval "$var_name=\"\""
+        safe_assign "$var_name" ""
         API_KEY_STATUS[$service_id]="skipped"
     fi
 }
